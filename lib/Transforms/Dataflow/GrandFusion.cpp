@@ -1,4 +1,5 @@
 #include "mlir/IR/Dominance.h"
+#include "mlir/Dialect/Math/IR/Math.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 #include "scalehls/Transforms/Passes.h"
 #include "scalehls/Transforms/Utils.h"
@@ -49,6 +50,15 @@ struct LinalgGeneralization : public OpInterfaceRewritePattern<linalg::LinalgOp>
 } // namespace
 
 namespace {
+bool isFusionRoot(linalg::GenericOp genericOp) {
+  // Generic reductions produced directly by a frontend are already in the
+  // form expected by GrandFusion and therefore never pass through
+  // LinalgGeneralization, which is where named reductions receive the
+  // "Actual Consumer" marker.
+  return genericOp->hasAttr("Actual Consumer") ||
+         isReductionTypeGenericOp(genericOp);
+}
+
 AffineMap getNewAffineMapForOutputFromExpand(AffineMap map,
                                               SmallVector<ReassociationIndices, 4> reassociationIndices,
                                               ArrayRef<int64_t> newResultShape,
@@ -120,7 +130,7 @@ struct BackwardFuse : public OpRewritePattern<linalg::GenericOp> {
 
   LogicalResult matchAndRewrite(linalg::GenericOp genericOp,
                                  PatternRewriter& rewriter) const override {
-    if (!genericOp->hasAttr("Actual Consumer")) return failure();
+    if (!isFusionRoot(genericOp)) return failure();
     bool fail = true;
     for (auto& _ : genericOp->getUses()) if (!isa<hls::YieldOp>(_.getOwner())) fail = false;
     if (fail) return failure();
@@ -247,56 +257,13 @@ struct BackwardFuse : public OpRewritePattern<linalg::GenericOp> {
 
 namespace {
 AffineMap getNewAffineMapsForForwardFusedOp(AffineMap map,
-                                            AffineMap indexingMapOfInput,
-                                            MLIRContext* ctx) {
-   
-  auto getNewAffineExpr = [&](auto&& self, AffineExpr expr, 
-                              ArrayRef<AffineExpr> newExprMap) -> AffineExpr {
-    if (expr.isa<AffineConstantExpr>()) return expr;
-
-    AffineExpr newExpr;
-    if (expr.isa<AffineDimExpr>()) {
-      auto castExpr = expr.cast<AffineDimExpr>();
-      unsigned int idx = castExpr.getPosition();
-      newExpr = newExprMap[idx];
-    }
-
-    if (expr.isa<AffineBinaryOpExpr>()) {
-      auto castExpr = expr.cast<AffineBinaryOpExpr>();
-      auto newLHS = self(self, castExpr.getLHS(), newExprMap);
-      auto newRHS = self(self, castExpr.getRHS(), newExprMap);
-
-      switch (castExpr.getKind()) {
-        case AffineExprKind::Add:
-          newExpr = newLHS + newRHS;
-          break;
-        case AffineExprKind::Mul:
-          newExpr = newLHS * newRHS;
-          break;
-        case AffineExprKind::FloorDiv:
-          newExpr = newLHS.floorDiv(newRHS);
-          break;
-        case AffineExprKind::CeilDiv:
-          newExpr = newLHS.ceilDiv(newRHS);
-          break;
-        case AffineExprKind::Mod:
-          newExpr = newLHS % newRHS;
-          break;
-        default:
-          llvm_unreachable("Unsupported AffineExprKind");
-      }
-    }
-
-    return newExpr;
-  };
-  
-  ArrayRef<AffineExpr> newExprMap = indexingMapOfInput.getResults();
-  for (auto _ : newExprMap) assert(_.isa<AffineDimExpr>() || _.isa<AffineConstantExpr>());
-
-  SmallVector<AffineExpr> newExprs;
-  for (auto expr : map.getResults()) newExprs.push_back(getNewAffineExpr(getNewAffineExpr, expr, newExprMap));
-
-  return AffineMap::get(indexingMapOfInput.getNumDims(), indexingMapOfInput.getNumSymbols(), newExprs, ctx);
+                                            AffineMap indexingMapOfInput) {
+  // `map` maps the producer loops to one of its inputs, while
+  // `indexingMapOfInput` maps the consumer loops to the producer result.
+  // Compose them instead of restricting the consumer map to dimensions and
+  // constants: valid linalg indexing maps may also contain expressions such
+  // as `mod` (RoPE) and `floordiv` (GQA).
+  return map.compose(indexingMapOfInput);
 }
 
 struct ForwardFuse : public OpRewritePattern<linalg::GenericOp> {
@@ -304,7 +271,7 @@ struct ForwardFuse : public OpRewritePattern<linalg::GenericOp> {
 
   LogicalResult matchAndRewrite(linalg::GenericOp genericOp,
                                  PatternRewriter& rewriter) const override {
-    if (!genericOp->hasAttr("Actual Consumer")) return failure();
+    if (!isFusionRoot(genericOp)) return failure();
 
     MLIRContext* ctx = rewriter.getContext();
     auto loc = genericOp.getLoc();
@@ -372,6 +339,46 @@ struct ForwardFuse : public OpRewritePattern<linalg::GenericOp> {
 
         argIdxToBeReplaced += 1;
         fused = true;
+      } else if (
+          definingOp->getName().getDialectNamespace() ==
+              math::MathDialect::getDialectNamespace() &&
+          OpTrait::hasElementwiseMappableTraits(definingOp) &&
+          definingOp->getNumResults() == 1 &&
+          llvm::all_of(definingOp->getOperandTypes(), [](Type type) {
+            return type.isa<RankedTensorType>();
+          })) {
+        // Replace the tensor-level math op with its tensor operands and clone
+        // the equivalent scalar op into the consumer's linalg.generic body.
+        // ElementwiseMappable guarantees that all tensor operands and results
+        // have the same shape, so each operand composes with the consumer
+        // through the same indexing map.
+        size_t firstInsertedArg = argIdxToBeReplaced;
+        newInputs.append(definingOp->operand_begin(), definingOp->operand_end());
+        for (Value operand : definingOp->getOperands()) {
+          newIndexingMaps.push_back(indexingMapOfInput);
+          auto operandType = operand.getType().cast<RankedTensorType>();
+          region.front().insertArgument(argIdxToBeReplaced,
+                                        operandType.getElementType(), loc);
+          argIdxToBeReplaced += 1;
+        }
+
+        auto& block = region.front();
+        SmallVector<Value> scalarOperands;
+        for (size_t i = firstInsertedArg; i < argIdxToBeReplaced; ++i)
+          scalarOperands.push_back(block.getArgument(i));
+
+        auto resultElementType =
+            input.getType().cast<RankedTensorType>().getElementType();
+        rewriter.setInsertionPointToStart(&block);
+        auto* scalarOp = rewriter.create(
+            definingOp->getLoc(), definingOp->getName().getIdentifier(),
+            scalarOperands, TypeRange{resultElementType},
+            definingOp->getAttrs());
+
+        auto argToBeReplaced = block.getArgument(argIdxToBeReplaced);
+        argToBeReplaced.replaceAllUsesWith(scalarOp->getResult(0));
+        block.eraseArgument(argIdxToBeReplaced);
+        fused = true;
       } else if (isa<linalg::GenericOp>(definingOp)) {
         auto castDefiningOp = dyn_cast<linalg::GenericOp>(definingOp);
         SmallVector<AffineMap> indexingMapsOfDefiningOp = castDefiningOp.getIndexingMapsArray();
@@ -380,38 +387,54 @@ struct ForwardFuse : public OpRewritePattern<linalg::GenericOp> {
           indexingMapsOfDefiningOp.back().getNumDims() == indexingMapOfInput.getResults().size()
         );
 
-        // new inputs
         SmallVector<Value> inputsOfDefiningOp = castDefiningOp.getInputOperands();
-        newInputs.append(inputsOfDefiningOp);
-        size_t numOfNewInputsInserted = inputsOfDefiningOp.size();
-
-        // new indexing maps
         indexingMapsOfDefiningOp.pop_back();
-        for (auto map : indexingMapsOfDefiningOp) 
-          newIndexingMaps.push_back(getNewAffineMapsForForwardFusedOp(map, indexingMapOfInput, ctx));
+        assert(indexingMapsOfDefiningOp.size() == inputsOfDefiningOp.size());
     
         auto& block = region.front();
         auto& blockToBeFused = castDefiningOp.getRegion().front();
 
         auto argTypesToBeFused = blockToBeFused.getArgumentTypes();
-        assert(argTypesToBeFused.size() - 1 == numOfNewInputsInserted);
-        for (size_t i = 0; i < numOfNewInputsInserted; i += 1) {
-          block.insertArgument(argIdxToBeReplaced, argTypesToBeFused[i], loc);
-          argIdxToBeReplaced += 1;
-        }
+        assert(argTypesToBeFused.size() - 1 == inputsOfDefiningOp.size());
 
         BlockAndValueMapping mapper;
-        auto args = block.getArguments();
         auto argsToBeFused = blockToBeFused.getArguments();
-        assert(argsToBeFused.size() - 1 == numOfNewInputsInserted);
-        for (size_t i = 0; i < numOfNewInputsInserted; i += 1) 
-          mapper.map(argsToBeFused[i], args[argIdxToBeReplaced - numOfNewInputsInserted + i]);
+        assert(argsToBeFused.size() - 1 == inputsOfDefiningOp.size());
+        for (size_t i = 0; i < inputsOfDefiningOp.size(); i += 1) {
+          auto newIndexingMap = getNewAffineMapsForForwardFusedOp(
+              indexingMapsOfDefiningOp[i], indexingMapOfInput);
+
+          // The same tensor may be exposed repeatedly while fusing a producer
+          // generic. It is only the same linalg input when its composed access
+          // map is also identical.
+          size_t existingInputIdx = SIZE_MAX;
+          for (size_t j = 0; j < newInputs.size(); ++j) {
+            if (newInputs[j] == inputsOfDefiningOp[i] &&
+                newIndexingMaps[j] == newIndexingMap) {
+              existingInputIdx = j;
+              break;
+            }
+          }
+
+          if (existingInputIdx != SIZE_MAX) {
+            mapper.map(argsToBeFused[i],
+                       block.getArgument(existingInputIdx));
+            continue;
+          }
+
+          newInputs.push_back(inputsOfDefiningOp[i]);
+          newIndexingMaps.push_back(newIndexingMap);
+          block.insertArgument(argIdxToBeReplaced, argTypesToBeFused[i], loc);
+          mapper.map(argsToBeFused[i],
+                     block.getArgument(argIdxToBeReplaced));
+          argIdxToBeReplaced += 1;
+        }
 
         rewriter.setInsertionPointToStart(&block);
         Operation* replacer;
         for (auto& bodyOp : blockToBeFused.without_terminator()) replacer = rewriter.clone(bodyOp, mapper);
 
-        auto argToBeReplaced = args[argIdxToBeReplaced];
+        auto argToBeReplaced = block.getArgument(argIdxToBeReplaced);
         argToBeReplaced.replaceAllUsesWith(replacer->getResult(0));
         block.eraseArgument(argIdxToBeReplaced);
         fused = true;

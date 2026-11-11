@@ -232,12 +232,14 @@ entry_1:
 
 entry_2:         
         // Linalg optimization.
-        pm.addPass(mlir::createLinalgElementwiseOpFusionPass());
+        // pm.addPass(mlir::createLinalgElementwiseOpFusionPass());
         pm.addPass(scalehls::createCreateDataflowFromLinalgPass(opts.greedyFuse));
+        // pm.addPass(mlir::createLinalgElementwiseOpFusionPass());
         pm.addPass(scalehls::createUpliftReshapesBetweenTasksPass());
         pm.addPass(mlir::createConvertTensorToLinalgPass());
         pm.addPass(mlir::createCanonicalizerPass());
         pm.addPass(scalehls::createGrandFusionPass());
+        pm.addPass(scalehls::createNormalizeLinalgGenericConstantsPass());
         if (opts.debugPoint == 2)
           return;
           
@@ -351,7 +353,8 @@ entry_11:
             opts.loopUnrollFactor, /*unrollPointLoopOnly=*/true,
             opts.complexityAware, opts.correlationAware));
         pm.addPass(mlir::createSimplifyAffineStructuresPass());
-        pm.addPass(scalehls::createLegalizeDataflowPass());
+        // pm.addPass(scalehls::createLegalizeDataflowPass());
+        pm.addPass(scalehls::createBufferDuplicatePass());
         pm.addPass(mlir::createCanonicalizerPass());
 
         if (opts.debugPoint == 11)

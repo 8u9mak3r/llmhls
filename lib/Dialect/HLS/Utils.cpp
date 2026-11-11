@@ -118,6 +118,7 @@ TaskOp scalehls::fuseOpsIntoTask(ArrayRef<Operation *> ops,
   return task;
 }
 
+
 /// Fuse multiple nodes into a new node.
 NodeOp scalehls::fuseNodeOps(ArrayRef<NodeOp> nodes,
                              PatternRewriter &rewriter) {
@@ -132,8 +133,6 @@ NodeOp scalehls::fuseNodeOps(ArrayRef<NodeOp> nodes,
   llvm::SetVector<Value> params;
   llvm::SmallVector<Location, 8> paramLocs;
 
-  llvm::SetVector<hls::BufferOp> intermediateBufs;
-
   for (auto node : nodes) {
     for (auto output : node.getOutputs())
       if (outputs.insert(output))
@@ -144,20 +143,13 @@ NodeOp scalehls::fuseNodeOps(ArrayRef<NodeOp> nodes,
   }
   for (auto node : nodes)
     for (auto input : llvm::enumerate(node.getInputs())) {
-      if (outputs.count(input.value())) {
-        intermediateBufs.insert(input.value().getDefiningOp<hls::BufferOp>());
+      if (outputs.count(input.value()))
         continue;
-      }
       if (inputs.insert(input.value())) {
         inputLocs.push_back(input.value().getLoc());
         inputTaps.push_back(node.getInputTap(input.index()));
       }
     }
-
-  for (auto buffer : intermediateBufs) {
-    outputs.erase(llvm::find(outputs, buffer.getResult()));
-    outputLocs.pop_back();
-  }
 
   // Construct the new node after the last node.
   rewriter.setInsertionPointAfter(nodes.back());
@@ -169,40 +161,108 @@ NodeOp scalehls::fuseNodeOps(ArrayRef<NodeOp> nodes,
   block->addArguments(ValueRange(outputs.getArrayRef()), outputLocs);
   block->addArguments(ValueRange(params.getArrayRef()), paramLocs);
 
-  // 'hls.dataflow.schedule' op expects parent op to be one of 'func.func, affine.for'
-  // I dunno why, so don't ask me
-  rewriter.setInsertionPointToStart(&newNode.getBody().front());
-  auto affineForOp = rewriter.create<AffineForOp>(newNode.getLoc(), 0, 1);
-  auto affineForBlock = affineForOp.getBody();
-
-  auto scheduleInputs = SmallVector<Value>(block->getArguments());
-  auto scheduleArgLocs = SmallVector<Location>();
-  scheduleArgLocs.append(inputLocs);
-  scheduleArgLocs.append(outputLocs);
-  scheduleArgLocs.append(paramLocs);
-
-  rewriter.setInsertionPointToStart(affineForBlock);
-  auto newSchedule = rewriter.create<hls::ScheduleOp>(affineForOp.getLoc(), scheduleInputs);
-  auto scheduleBlock = rewriter.createBlock(&newSchedule.getBody());
-  scheduleBlock->addArguments(ValueRange(scheduleInputs), scheduleArgLocs);
-
-  for (auto buffer : intermediateBufs) 
-    buffer->moveBefore(scheduleBlock, scheduleBlock->begin());
-  
-  BlockAndValueMapping mapper;
-  for (auto p : llvm::zip(newNode.getOperands(), scheduleBlock->getArguments())) 
-    mapper.map(std::get<0>(p), std::get<1>(p));
-  
-  rewriter.setInsertionPointToEnd(scheduleBlock);
+  // Inline all nodes into the new node.
   for (auto node : nodes) {
-    rewriter.clone(*node.getOperation(), mapper);
+    auto &nodeOps = node.getBody().front().getOperations();
+    auto &newNodeOps = newNode.getBody().front().getOperations();
+    newNodeOps.splice(newNode.end(), nodeOps);
+    for (auto t : llvm::zip(node.getBody().getArguments(), node.getOperands()))
+      std::get<0>(t).replaceAllUsesWith(std::get<1>(t));
     rewriter.eraseOp(node);
   }
 
-  // newNode.dump();
-
+  for (auto t : llvm::zip(newNode.getOperands(), block->getArguments()))
+    std::get<0>(t).replaceUsesWithIf(std::get<1>(t), [&](OpOperand &use) {
+      return newNode->isProperAncestor(use.getOwner());
+    });
   return newNode;
 }
+
+// /// Fuse multiple nodes into a new node.
+// NodeOp scalehls::fuseNodeOps(ArrayRef<NodeOp> nodes,
+//                              PatternRewriter &rewriter) {
+//   assert((nodes.size() > 1) && "must fuse at least two nodes");
+
+//   // Collect inputs, outputs, and params of the new node.
+//   llvm::SetVector<Value> inputs;
+//   llvm::SmallVector<unsigned, 8> inputTaps;
+//   llvm::SmallVector<Location, 8> inputLocs;
+//   llvm::SetVector<Value> outputs;
+//   llvm::SmallVector<Location, 8> outputLocs;
+//   llvm::SetVector<Value> params;
+//   llvm::SmallVector<Location, 8> paramLocs;
+
+//   llvm::SetVector<hls::BufferOp> intermediateBufs;
+
+//   for (auto node : nodes) {
+//     for (auto output : node.getOutputs())
+//       if (outputs.insert(output))
+//         outputLocs.push_back(output.getLoc());
+//     for (auto param : node.getParams())
+//       if (params.insert(param))
+//         paramLocs.push_back(param.getLoc());
+//   }
+//   for (auto node : nodes)
+//     for (auto input : llvm::enumerate(node.getInputs())) {
+//       if (outputs.count(input.value())) {
+//         intermediateBufs.insert(input.value().getDefiningOp<hls::BufferOp>());
+//         continue;
+//       }
+//       if (inputs.insert(input.value())) {
+//         inputLocs.push_back(input.value().getLoc());
+//         inputTaps.push_back(node.getInputTap(input.index()));
+//       }
+//     }
+
+//   for (auto buffer : intermediateBufs) {
+//     outputs.erase(llvm::find(outputs, buffer.getResult()));
+//     outputLocs.pop_back();
+//   }
+
+//   // Construct the new node after the last node.
+//   rewriter.setInsertionPointAfter(nodes.back());
+//   auto newNode = rewriter.create<NodeOp>(
+//       rewriter.getUnknownLoc(), inputs.getArrayRef(), outputs.getArrayRef(),
+//       params.getArrayRef(), inputTaps);
+//   auto block = rewriter.createBlock(&newNode.getBody());
+//   block->addArguments(ValueRange(inputs.getArrayRef()), inputLocs);
+//   block->addArguments(ValueRange(outputs.getArrayRef()), outputLocs);
+//   block->addArguments(ValueRange(params.getArrayRef()), paramLocs);
+
+//   // 'hls.dataflow.schedule' op expects parent op to be one of 'func.func, affine.for'
+//   // I dunno why, so don't ask me
+//   rewriter.setInsertionPointToStart(&newNode.getBody().front());
+//   auto affineForOp = rewriter.create<AffineForOp>(newNode.getLoc(), 0, 1);
+//   auto affineForBlock = affineForOp.getBody();
+
+//   auto scheduleInputs = SmallVector<Value>(block->getArguments());
+//   auto scheduleArgLocs = SmallVector<Location>();
+//   scheduleArgLocs.append(inputLocs);
+//   scheduleArgLocs.append(outputLocs);
+//   scheduleArgLocs.append(paramLocs);
+
+//   rewriter.setInsertionPointToStart(affineForBlock);
+//   auto newSchedule = rewriter.create<hls::ScheduleOp>(affineForOp.getLoc(), scheduleInputs);
+//   auto scheduleBlock = rewriter.createBlock(&newSchedule.getBody());
+//   scheduleBlock->addArguments(ValueRange(scheduleInputs), scheduleArgLocs);
+
+//   for (auto buffer : intermediateBufs) 
+//     buffer->moveBefore(scheduleBlock, scheduleBlock->begin());
+  
+//   BlockAndValueMapping mapper;
+//   for (auto p : llvm::zip(newNode.getOperands(), scheduleBlock->getArguments())) 
+//     mapper.map(std::get<0>(p), std::get<1>(p));
+  
+//   rewriter.setInsertionPointToEnd(scheduleBlock);
+//   for (auto node : nodes) {
+//     rewriter.clone(*node.getOperation(), mapper);
+//     rewriter.eraseOp(node);
+//   }
+
+//   // newNode.dump();
+
+//   return newNode;
+// }
 
 static auto getUsersExcept(Value buffer, OperandKind kind, NodeOp except) {
   SmallVector<NodeOp> nodes;

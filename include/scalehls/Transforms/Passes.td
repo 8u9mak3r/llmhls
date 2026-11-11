@@ -102,6 +102,15 @@ def CreateTokenStream : Pass<"scalehls-create-token-stream", "func::FuncOp"> {
   let constructor = "mlir::scalehls::createCreateTokenStreamPass()";
 }
 
+def BufferDuplicate : Pass<"scalehls-buffer-duplicate", "func::FuncOp"> {
+  let summary = "Duplicate output buffers for every dataflow node consumer";
+  let description = [{
+    This pass eliminates multi-consumer and bypass dependencies between the
+    outermost dataflow nodes by giving each consumer a distinct buffer.
+  }];
+  let constructor = "mlir::scalehls::createBufferDuplicatePass()";
+}
+
 def EliminateMultiConsumer :
       Pass<"scalehls-eliminate-multi-consumer", "func::FuncOp"> {
   let summary = "Eliminate multi-consumer violations";
@@ -219,6 +228,17 @@ def LinalgFakeQuantize : Pass<"scalehls-linalg-fake-quantize", "ModuleOp"> {
     Option<"quanBits", "quan-bits", "unsigned", /*default=*/"8",
            "the number of bits for quantization">
   ];
+}
+
+def NormalizeLinalgGenericConstants :
+      Pass<"scalehls-normalize-linalg-generic-constants", "func::FuncOp"> {
+  let summary = "Normalize shaped constants around linalg.generic operations";
+  let description = [{
+    Replace shaped output constants with tensor.empty plus linalg.fill, and
+    inline splat tensor inputs as scalar constants in linalg.generic bodies.
+  }];
+  let constructor =
+      "mlir::scalehls::createNormalizeLinalgGenericConstantsPass()";
 }
 
 def TosaFakeQuantize : Pass<"scalehls-tosa-fake-quantize", "ModuleOp"> {

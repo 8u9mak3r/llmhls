@@ -62,7 +62,7 @@ struct FuseMultiConsumer : public OpRewritePattern<ScheduleOp> {
         // llvm::outs() << "merged " << nodesToMerge.size() << "\n";
         llvm::sort(nodesToMerge,
                    [&](NodeOp a, NodeOp b) { return domInfo.dominates(a, b); });
-        nodesToMerge.pop_back();
+        // nodesToMerge.pop_back();
         if (nodesToMerge.size() <= 1) continue;
         auto newNode = fuseNodeOps(nodesToMerge, rewriter);
         newNode.setLevelAttr(rewriter.getI32IntegerAttr(p.first));

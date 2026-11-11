@@ -10,6 +10,9 @@ build
 **/dump_csv
 **/.ipynb_checkpoints
 **/__pycache__
+**/debug*
+**/checkpoints
+**/datasets
 
 *.onnx*
 *.tmp
@@ -18,3 +21,6 @@ build
 *.log
 *.csv
 *.zip
+*.mlir
+*.txt
+*.ipynb

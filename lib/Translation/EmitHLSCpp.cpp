@@ -12,7 +12,11 @@
 #include "scalehls/Dialect/HLS/Utils.h"
 #include "scalehls/Dialect/HLS/Visitor.h"
 #include "llvm/ADT/PostOrderIterator.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include <functional>
 
 using namespace mlir;
 using namespace scalehls;
@@ -21,22 +25,26 @@ static llvm::cl::opt<bool> emitVitisDirectives("emit-vitis-directives",
                                                llvm::cl::init(true));
 static llvm::cl::opt<bool> enforceFalseDependency("enforce-false-dependency",
                                                   llvm::cl::init(true));
+static llvm::cl::opt<std::string> hlsCppOutputDir(
+    "hls-cpp-output-dir",
+    llvm::cl::desc("Directory for split HLS C++ sources and test projects"),
+    llvm::cl::init(""));
 
 //===----------------------------------------------------------------------===//
 // Utils
 //===----------------------------------------------------------------------===//
 
-static SmallString<16> getTypeName(Value val) {
+static SmallString<16> getTypeName(Type valType) {
   // Handle memref, tensor, and vector types.
-  auto valType = val.getType();
-  if (auto arrayType = valType.dyn_cast<ShapedType>())
-    valType = arrayType.getElementType();
-  else if (auto streamType = valType.dyn_cast<StreamType>())
-    valType = streamType.getElementType();
-  else if (auto axiType = valType.dyn_cast<AxiType>()) {
-    valType = axiType.getElementType();
+  while (true) {
     if (auto arrayType = valType.dyn_cast<ShapedType>())
       valType = arrayType.getElementType();
+    else if (auto streamType = valType.dyn_cast<StreamType>())
+      valType = streamType.getElementType();
+    else if (auto axiType = valType.dyn_cast<AxiType>())
+      valType = axiType.getElementType();
+    else
+      break;
   }
 
   // Handle float types.
@@ -72,10 +80,16 @@ static SmallString<16> getTypeName(Value val) {
       // }
       
     }
-  } else
-    val.getDefiningOp()->emitError("has unsupported type.");
+  }
 
   return SmallString<16>();
+}
+
+static SmallString<16> getTypeName(Value val) {
+  auto typeName = getTypeName(val.getType());
+  if (typeName.empty())
+    mlir::emitError(val.getLoc(), "has unsupported type.");
+  return typeName;
 }
 
 //===----------------------------------------------------------------------===//
@@ -211,6 +225,7 @@ static SmallString<8> getConstantString(Type type, Attribute attr) {
     // string.append("ap_" + signedness + "int<" +
                   // std::to_string(intType.getWidth()) + ">)");
     string.append(signedness + "int" + std::to_string(intType.getWidth()) + "_t");
+    string.append(")");
 
     if (intType.isSigned()) {
       auto value = attr.cast<IntegerAttr>().getValue().getSExtValue();
@@ -295,6 +310,7 @@ public:
   void emitUnary(Operation *op, const char *syntax);
   void emitBinary(Operation *op, const char *syntax);
   template <typename OpType> void emitMaxMin(OpType op, const char *syntax);
+  void emitFPowI(math::FPowIOp op);
 
   /// Special expression emitters.
   void emitSelect(arith::SelectOp op);
@@ -302,6 +318,7 @@ public:
 
   /// Top-level MLIR module emitter.
   void emitModule(ModuleOp module);
+  LogicalResult emitSplitModule(ModuleOp module, StringRef outputDir);
 
 private:
   /// Helper to get the string indices of TransferRead/Write operations.
@@ -321,7 +338,13 @@ private:
   void emitLoopDirectives(Operation *op);
   void emitArrayDirectives(Value memref);
   void emitFunctionDirectives(func::FuncOp func, ArrayRef<Value> portList);
-  void emitFunction(func::FuncOp func);
+  void emitModuleHeader(ModuleOp module, bool internalizeHelpers = false);
+  void emitFunctionParameter(Value value, bool isOutput);
+  void emitNamedValue(Type type, StringRef name, bool isParameter,
+                      bool isOutput = false);
+  void emitFunctionDeclaration(func::FuncOp func);
+  void emitFunction(func::FuncOp func, bool isStatic = false);
+  void emitTestbench(func::FuncOp func);
 };
 } // namespace
 
@@ -538,6 +561,7 @@ public:
   bool visitOp(arith::MaxFOp op) { return emitter.emitMaxMin(op, "hls::max"), true; }
   bool visitOp(arith::MinFOp op) { return emitter.emitMaxMin(op, "hls::min"), true; }
   bool visitOp(math::PowFOp op) { return emitter.emitMaxMin(op, "hls::pow"), true; }
+  bool visitOp(math::FPowIOp op) { return emitter.emitFPowI(op), true; }
 
   /// Integer binary expressions.
   bool visitOp(arith::CmpIOp op);
@@ -785,6 +809,10 @@ void ModuleEmitter::emitAssign(AssignOpType op) {
       os << ");  // Assign op emitted ";
     } else if (resultType.isF16() && operandType.isInteger(8)) { // case 3: ap_int<8> -> half(i8 -> f16)
       os << "static_cast<half>((int)";
+      emitValue(operand, rank);
+      os << ");  // Assign op emitted ";
+    } else {
+      os << "static_cast<" << getTypeName(result) << ">(";
       emitValue(operand, rank);
       os << ");  // Assign op emitted ";
     }
@@ -1540,6 +1568,19 @@ void ModuleEmitter::emitMaxMin(OpType op, const char *syntax) {
   emitNestedLoopFooter(rank);
 }
 
+void ModuleEmitter::emitFPowI(math::FPowIOp op) {
+  auto rank = emitNestedLoopHeader(op.getResult());
+  indent();
+  emitValue(op.getResult(), rank);
+  os << " = hls::pow(";
+  emitValue(op.getLhs(), rank);
+  os << ", static_cast<" << getTypeName(op.getLhs()) << ">(";
+  emitValue(op.getRhs(), rank);
+  os << "));";
+  emitInfoAndNewLine(op);
+  emitNestedLoopFooter(rank);
+}
+
 /// Special expression emitters.
 void ModuleEmitter::emitSelect(arith::SelectOp op) {
   unsigned rank = emitNestedLoopHeader(op.getResult());
@@ -1720,19 +1761,24 @@ void ModuleEmitter::emitLoopDirectives(Operation *loop) {
   if (loopDirect.getPipeline()) {
     indent() << "#pragma HLS pipeline II=" << loopDirect.getTargetII() << "\n";
 
-    auto affineLoop = dyn_cast<AffineForOp>(loop);
-    auto writers = affineLoop.getOps<AffineStoreOp>();
-    assert(writers.empty() || llvm::hasSingleElement(writers));
-    AffineStoreOp write;
-    if (!writers.empty()) write = *writers.begin();
+    Operation *pipelinedLoop = loop;
 
     while (getLoopDirective(loop->getParentOp())) loop = loop->getParentOp();
 
     if (!hasParallelAttr(loop) && !loopDirect.getDataflow() &&
       enforceFalseDependency.getValue()) {
-      indent() << "#pragma HLS dependence dependent=false type=inter variable=";
-      emitValue(write.getMemRef());
-      indent() << "\n";
+      auto affineLoop = dyn_cast<AffineForOp>(pipelinedLoop);
+      if (affineLoop) {
+        llvm::SmallDenseSet<Value> emittedMemrefs;
+        for (auto write : affineLoop.getOps<AffineStoreOp>()) {
+          if (!emittedMemrefs.insert(write.getMemRef()).second)
+            continue;
+          indent()
+              << "#pragma HLS dependence dependent=false type=inter variable=";
+          emitValue(write.getMemRef());
+          os << "\n";
+        }
+      }
     }
   } else if (loopDirect.getDataflow()) {
     indent() << "#pragma HLS pipeline II=1\n";
@@ -1930,7 +1976,97 @@ void ModuleEmitter::emitFunctionDirectives(func::FuncOp func,
   }
 }
 
-void ModuleEmitter::emitFunction(func::FuncOp func) {
+void ModuleEmitter::emitFunctionParameter(Value value, bool isOutput) {
+  Type type = value.getType();
+  ShapedType shapedType = type.dyn_cast<ShapedType>();
+  if (auto axiType = type.dyn_cast<AxiType>())
+    shapedType = axiType.getElementType().dyn_cast<ShapedType>();
+
+  if (shapedType) {
+    os << getTypeName(shapedType.getElementType());
+    if (shapedType.hasStaticShape()) {
+      if (shapedType.getRank() == 0) {
+        os << " &";
+        return;
+      }
+      for (int64_t shape : shapedType.getShape())
+        os << "[" << shape << "]";
+    } else {
+      os << " *";
+    }
+    return;
+  }
+
+  if (auto streamType = type.dyn_cast<StreamType>()) {
+    os << "hls::stream<" << getTypeName(streamType.getElementType()) << "> &";
+    return;
+  }
+
+  os << getTypeName(type);
+  if (isOutput)
+    os << " *";
+}
+
+void ModuleEmitter::emitNamedValue(Type type, StringRef name,
+                                   bool isParameter, bool isOutput) {
+  ShapedType shapedType = type.dyn_cast<ShapedType>();
+  if (auto axiType = type.dyn_cast<AxiType>()) {
+    type = axiType.getElementType();
+    shapedType = type.dyn_cast<ShapedType>();
+  }
+
+  if (shapedType) {
+    os << getTypeName(shapedType.getElementType()) << " ";
+    if (isParameter && shapedType.hasStaticShape() &&
+        shapedType.getRank() == 0)
+      os << "&";
+    else if (!shapedType.hasStaticShape())
+      os << "*";
+    os << name;
+    if (shapedType.hasStaticShape())
+      for (int64_t shape : shapedType.getShape())
+        os << "[" << shape << "]";
+    return;
+  }
+
+  if (auto streamType = type.dyn_cast<StreamType>()) {
+    os << "hls::stream<" << getTypeName(streamType.getElementType()) << "> ";
+    if (isParameter)
+      os << "&";
+    os << name;
+    return;
+  }
+
+  os << getTypeName(type) << " ";
+  if (isParameter && isOutput)
+    os << "*";
+  os << name;
+}
+
+void ModuleEmitter::emitFunctionDeclaration(func::FuncOp func) {
+  os << "void " << func.getName() << "(\n";
+  addIndent();
+
+  SmallVector<std::pair<Value, bool>> parameters;
+  for (Value argument : func.getArguments())
+    parameters.emplace_back(argument, false);
+  auto funcReturn = cast<func::ReturnOp>(func.front().getTerminator());
+  for (Value result : funcReturn.getOperands())
+    parameters.emplace_back(result, true);
+
+  for (auto [index, parameter] : llvm::enumerate(parameters)) {
+    indent();
+    emitFunctionParameter(parameter.first, parameter.second);
+    if (index + 1 != parameters.size())
+      os << ",";
+    os << "\n";
+  }
+
+  reduceIndent();
+  os << ");\n\n";
+}
+
+void ModuleEmitter::emitFunction(func::FuncOp func, bool isStatic) {
   if (func.getBlocks().size() != 1)
     emitError(func, "has zero or more than one basic blocks.");
 
@@ -1951,6 +2087,8 @@ void ModuleEmitter::emitFunction(func::FuncOp func) {
   }
 
   // Emit function signature.
+  if (isStatic)
+    os << "static ";
   os << "void " << func.getName() << "(\n";
   addIndent();
 
@@ -1961,14 +2099,21 @@ void ModuleEmitter::emitFunction(func::FuncOp func) {
   unsigned argIdx = 0;
   for (auto &arg : func.getArguments()) {
     indent();
-    if (arg.getType().isa<ShapedType>())
-      emitArrayDecl(arg);
-    else if (arg.getType().isa<StreamType>())
+    if (auto shapedType = arg.getType().dyn_cast<ShapedType>()) {
+      if (shapedType.hasStaticShape() && shapedType.getRank() == 0)
+        emitValue(arg, /*rank=*/0, /*isPtr=*/false, /*isRef=*/true);
+      else
+        emitArrayDecl(arg);
+    } else if (arg.getType().isa<StreamType>())
       emitValue(arg, /*rank=*/0, /*isPtr=*/false, /*isRef=*/true);
     else if (auto axiType = arg.getType().dyn_cast<AxiType>()) {
-      if (axiType.getElementType().isa<ShapedType>())
-        emitArrayDecl(arg);
-      else
+      if (auto shapedType =
+              axiType.getElementType().dyn_cast<ShapedType>()) {
+        if (shapedType.hasStaticShape() && shapedType.getRank() == 0)
+          emitValue(arg, /*rank=*/0, /*isPtr=*/false, /*isRef=*/true);
+        else
+          emitArrayDecl(arg);
+      } else
         emitValue(arg);
     } else
       emitValue(arg);
@@ -1985,9 +2130,12 @@ void ModuleEmitter::emitFunction(func::FuncOp func) {
     indent();
     // TODO: a known bug, cannot return a value twice, e.g. return %0, %0 :
     // index, index. However, typically this should not happen.
-    if (result.getType().isa<ShapedType>())
-      emitArrayDecl(result);
-    else
+    if (auto shapedType = result.getType().dyn_cast<ShapedType>()) {
+      if (shapedType.hasStaticShape() && shapedType.getRank() == 0)
+        emitValue(result, /*rank=*/0, /*isPtr=*/false, /*isRef=*/true);
+      else
+        emitArrayDecl(result);
+    } else
       // In Vivado HLS, pointer indicates the value is an output.
       emitValue(result, /*rank=*/0, /*isPtr=*/true);
 
@@ -2010,8 +2158,76 @@ void ModuleEmitter::emitFunction(func::FuncOp func) {
   os << "\n";
 }
 
-/// Top-level MLIR module emitter.
-void ModuleEmitter::emitModule(ModuleOp module) {
+void ModuleEmitter::emitTestbench(func::FuncOp func) {
+  os << R"XXX(#include <algorithm>
+#include <ap_axi_sdata.h>
+#include <ap_fixed.h>
+#include <ap_int.h>
+#include <hls_math.h>
+#include <hls_stream.h>
+#include <math.h>
+#include <stdint.h>
+#include <string.h>
+
+)XXX";
+
+  auto funcReturn = cast<func::ReturnOp>(func.front().getTerminator());
+  unsigned numParameters = func.getNumArguments() + funcReturn.getNumOperands();
+
+  os << "void " << func.getName() << "(\n";
+  unsigned parameterIdx = 0;
+  for (auto [index, argument] : llvm::enumerate(func.getArguments())) {
+    os << "  ";
+    emitNamedValue(argument.getType(),
+                   (Twine("arg") + Twine(index)).str(),
+                   /*isParameter=*/true);
+    if (++parameterIdx != numParameters)
+      os << ",";
+    os << "\n";
+  }
+  for (auto [index, result] : llvm::enumerate(funcReturn.getOperands())) {
+    os << "  ";
+    emitNamedValue(result.getType(),
+                   (Twine("result") + Twine(index)).str(),
+                   /*isParameter=*/true, /*isOutput=*/true);
+    if (++parameterIdx != numParameters)
+      os << ",";
+    os << "\n";
+  }
+  os << ");\n\n";
+
+  for (auto [index, argument] : llvm::enumerate(func.getArguments())) {
+    emitNamedValue(argument.getType(), (Twine("arg") + Twine(index)).str(),
+                   /*isParameter=*/false);
+    os << ";\n";
+  }
+  for (auto [index, result] : llvm::enumerate(funcReturn.getOperands())) {
+    emitNamedValue(result.getType(),
+                   (Twine("result") + Twine(index)).str(),
+                   /*isParameter=*/false);
+    os << ";\n";
+  }
+
+  os << "\nint main(int argc, char const *argv[]) {\n";
+  os << "  " << func.getName() << "(";
+  parameterIdx = 0;
+  for (auto [index, argument] : llvm::enumerate(func.getArguments())) {
+    if (parameterIdx++ != 0)
+      os << ", ";
+    os << "arg" << index;
+  }
+  for (auto [index, result] : llvm::enumerate(funcReturn.getOperands())) {
+    if (parameterIdx++ != 0)
+      os << ", ";
+    if (!result.getType().isa<ShapedType>())
+      os << "&";
+    os << "result" << index;
+  }
+  os << ");\n\n  return 0;\n}\n";
+}
+
+void ModuleEmitter::emitModuleHeader(ModuleOp module,
+                                     bool internalizeHelpers) {
   os << R"XXX(
 //===------------------------------------------------------------*- C++ -*-===//
 //
@@ -2035,8 +2251,7 @@ void ModuleEmitter::emitModule(ModuleOp module) {
   if (module.walk([](PrimMulOp op) {
         return op.isPackMul() ? WalkResult::interrupt() : WalkResult::advance();
       }) == WalkResult::interrupt())
-    os << R"XXX(
-void pack_mul(int8_t A[2], int8_t B, int16_t C[2]) {
+    os << (internalizeHelpers ? "\nstatic " : "\n") << R"XXX(void pack_mul(int8_t A[2], int8_t B, int16_t C[2]) {
   #pragma HLS inline
   ap_int<27> packA = (ap_int<27>)A[0] + (ap_int<27>)A[1] << 18;
   ap_int<45> packC = packA * (ap_int<18>)B;
@@ -2045,6 +2260,11 @@ void pack_mul(int8_t A[2], int8_t B, int16_t C[2]) {
 }
 
 )XXX";
+}
+
+/// Top-level MLIR module emitter.
+void ModuleEmitter::emitModule(ModuleOp module) {
+  emitModuleHeader(module);
 
   // Emit all functions in the call graph in a post order.
   CallGraph graph(module);
@@ -2069,13 +2289,204 @@ void pack_mul(int8_t A[2], int8_t B, int16_t C[2]) {
   }
 }
 
+LogicalResult ModuleEmitter::emitSplitModule(ModuleOp module,
+                                             StringRef outputDir) {
+  if (std::error_code error = llvm::sys::fs::create_directories(outputDir)) {
+    emitError(module, Twine("failed to create HLS C++ output directory '") +
+                          outputDir + "': " + error.message());
+    return failure();
+  }
+
+  func::FuncOp topFunc = getTopFunc(module, "forward");
+  if (!topFunc) {
+    emitError(module, "cannot find a top function for split HLS C++ emission");
+    return failure();
+  }
+
+  SmallVector<func::FuncOp> directCallees;
+  llvm::SmallDenseSet<func::FuncOp> directCalleeSet;
+  topFunc.walk([&](func::CallOp call) {
+    auto callee = module.lookupSymbol<func::FuncOp>(call.getCallee());
+    if (!callee || callee.isDeclaration() || hasRuntimeAttr(callee))
+      return;
+    if (directCalleeSet.insert(callee).second)
+      directCallees.push_back(callee);
+  });
+
+  SmallString<256> srcDir(outputDir);
+  llvm::sys::path::append(srcDir, "src");
+  SmallString<256> testsDir(outputDir);
+  llvm::sys::path::append(testsDir, "tests");
+  for (StringRef directory : {StringRef(srcDir), StringRef(testsDir)}) {
+    if (std::error_code error = llvm::sys::fs::create_directories(directory)) {
+      emitError(module, Twine("failed to create HLS C++ output directory '") +
+                            directory + "': " + error.message());
+      return failure();
+    }
+  }
+
+  auto emitCppFile = [&](StringRef directory, StringRef stem,
+                         const std::function<void(ModuleEmitter &)> &emitBody) {
+    SmallString<256> path(directory);
+    llvm::sys::path::append(path, (stem + ".cpp").str());
+
+    std::error_code error;
+    llvm::raw_fd_ostream file(path, error, llvm::sys::fs::OF_Text);
+    if (error) {
+      emitError(module, Twine("failed to open HLS C++ output file '") + path +
+                            "': " + error.message());
+      return failure();
+    }
+
+    ScaleHLSEmitterState fileState(file);
+    ModuleEmitter fileEmitter(fileState);
+    emitBody(fileEmitter);
+    file.flush();
+    if (file.has_error()) {
+      file.clear_error();
+      emitError(module, Twine("failed to write HLS C++ output file '") + path +
+                            "'");
+      return failure();
+    }
+    return failure(fileState.encounteredError);
+  };
+
+  auto emitTextFile = [&](StringRef path,
+                          const std::function<void(raw_ostream &)> &emitBody) {
+    std::error_code error;
+    llvm::raw_fd_ostream file(path, error, llvm::sys::fs::OF_Text);
+    if (error) {
+      emitError(module, Twine("failed to open HLS output file '") + path +
+                            "': " + error.message());
+      return failure();
+    }
+
+    emitBody(file);
+    file.flush();
+    if (file.has_error()) {
+      file.clear_error();
+      emitError(module, Twine("failed to write HLS output file '") + path +
+                            "'");
+      return failure();
+    }
+    return success();
+  };
+
+  auto emitTestbenchFile = [&](StringRef directory, func::FuncOp func) {
+    return emitCppFile(directory, "test", [&](ModuleEmitter &fileEmitter) {
+      fileEmitter.emitTestbench(func);
+    });
+  };
+
+  auto emitConfigFile = [&](StringRef directory, func::FuncOp func,
+                            ArrayRef<std::string> sourceFiles) {
+    SmallString<256> path(directory);
+    llvm::sys::path::append(path, "test.cfg");
+    return emitTextFile(path, [&](raw_ostream &file) {
+      file << "part=xcu55c-fsvh2892-2L-e\n\n"
+              "[hls]\n"
+              "flow_target=vivado\n"
+              "package.output.format=ip_catalog\n"
+              "package.output.syn=false\n"
+           << "syn.top=" << func.getName() << "\n";
+      for (StringRef sourceFile : sourceFiles)
+        file << "syn.file=./" << sourceFile << "\n";
+      file << "cosim.trace_level=none\n"
+              "cosim.wave_debug=0\n"
+              "tb.file=./test.cpp\n"
+              "vivado.flow=impl\n";
+    });
+  };
+
+  if (failed(emitCppFile(outputDir, topFunc.getName(),
+                         [&](ModuleEmitter &fileEmitter) {
+                           fileEmitter.emitModuleHeader(
+                               module, /*internalizeHelpers=*/true);
+                           for (func::FuncOp callee : directCallees)
+                             fileEmitter.emitFunctionDeclaration(callee);
+                           fileEmitter.emitFunction(topFunc);
+                         })))
+    return failure();
+
+  if (failed(emitTestbenchFile(outputDir, topFunc)))
+    return failure();
+
+  SmallVector<std::string> topSourceFiles;
+  topSourceFiles.push_back((topFunc.getName() + ".cpp").str());
+  for (func::FuncOp callee : directCallees)
+    topSourceFiles.push_back(
+        (Twine("src/") + callee.getName() + ".cpp").str());
+  if (failed(emitConfigFile(outputDir, topFunc, topSourceFiles)))
+    return failure();
+
+  for (func::FuncOp root : directCallees) {
+    SmallVector<func::FuncOp> postOrder;
+    SmallVector<func::FuncOp> crossRootCallees;
+    llvm::SmallDenseSet<func::FuncOp> visited;
+    llvm::SmallDenseSet<func::FuncOp> seenCrossRootCallees;
+
+    std::function<void(func::FuncOp)> collectPostOrder =
+        [&](func::FuncOp func) {
+          if (!visited.insert(func).second)
+            return;
+          func.walk([&](func::CallOp call) {
+            auto callee = module.lookupSymbol<func::FuncOp>(call.getCallee());
+            if (!callee || callee.isDeclaration() || hasRuntimeAttr(callee))
+              return;
+            if (callee != root && directCalleeSet.count(callee)) {
+              if (seenCrossRootCallees.insert(callee).second)
+                crossRootCallees.push_back(callee);
+              return;
+            }
+            collectPostOrder(callee);
+          });
+          postOrder.push_back(func);
+        };
+    collectPostOrder(root);
+
+    auto emitNodeSource = [&](ModuleEmitter &fileEmitter) {
+      fileEmitter.emitModuleHeader(module, /*internalizeHelpers=*/true);
+      for (func::FuncOp callee : crossRootCallees)
+        fileEmitter.emitFunctionDeclaration(callee);
+      for (func::FuncOp func : postOrder)
+        fileEmitter.emitFunction(func, /*isStatic=*/func != root);
+    };
+
+    if (failed(emitCppFile(srcDir, root.getName(), emitNodeSource)))
+      return failure();
+
+    SmallString<256> nodeTestDir(testsDir);
+    llvm::sys::path::append(nodeTestDir, root.getName());
+    if (std::error_code error =
+            llvm::sys::fs::create_directories(nodeTestDir)) {
+      emitError(module, Twine("failed to create HLS C++ test directory '") +
+                            nodeTestDir + "': " + error.message());
+      return failure();
+    }
+
+    if (failed(emitCppFile(nodeTestDir, root.getName(), emitNodeSource)) ||
+        failed(emitTestbenchFile(nodeTestDir, root)))
+      return failure();
+
+    SmallVector<std::string> nodeSourceFiles = {
+        (root.getName() + ".cpp").str()};
+    if (failed(emitConfigFile(nodeTestDir, root, nodeSourceFiles)))
+      return failure();
+  }
+
+  return success();
+}
+
 //===----------------------------------------------------------------------===//
 // Entry of scalehls-translate
 //===----------------------------------------------------------------------===//
 
 LogicalResult scalehls::emitHLSCpp(ModuleOp module, llvm::raw_ostream &os) {
   ScaleHLSEmitterState state(os);
-  ModuleEmitter(state).emitModule(module);
+  ModuleEmitter emitter(state);
+  if (!hlsCppOutputDir.empty())
+    return emitter.emitSplitModule(module, hlsCppOutputDir);
+  emitter.emitModule(module);
   return failure(state.encounteredError);
 }
 

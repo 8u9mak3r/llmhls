@@ -117,11 +117,35 @@ struct ForwardFuseOp : public OpRewritePattern<OpType> {
     auto DT = DominanceInfo();
 
     auto builder = OpBuilder(rewriter.getContext());
-    // unsigned numOfUsers = 0;
+    unsigned numOfUsers = 0;
     // SmallVector<std::pair<OpOperand&, TaskOp>> taskUsers;
 
     /// if the result of the operation to be forward fused has multiple consumers
     /// then generate one copy for each and replace the corresponding use of the result
+    for (auto& use : llvm::make_early_inc_range(op->getUses())) {
+      if (auto task = dyn_cast<TaskOp>(use.getOwner()->getParentOp())) {
+        numOfUsers += 1;
+      }
+    }
+
+    if (llvm::isa<linalg::GenericOp>(op)) {
+      auto genericOp = cast<linalg::GenericOp>(op);
+      Block *body = genericOp.getBody();
+      size_t opCount = std::distance(body->begin(), body->end()) - 1;
+      if (opCount >= 5) {
+        op->setAttr("Actual Consumer", rewriter.getBoolAttr(true));
+        fuseOpsIntoTask({op}, rewriter);
+        return success();
+      }
+    }
+
+    if (numOfUsers >= 3) {
+      op->setAttr("Actual Consumer", rewriter.getBoolAttr(true));
+      fuseOpsIntoTask({op}, rewriter);
+      return success();
+    }
+    
+
     for (auto& use : llvm::make_early_inc_range(op->getUses())) {
       if (auto task = dyn_cast<TaskOp>(use.getOwner()->getParentOp())) {
         builder.setInsertionPoint(op);

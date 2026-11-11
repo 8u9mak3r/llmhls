@@ -57,7 +57,7 @@ public:
             // Float binary expressions.
             arith::CmpFOp, arith::AddFOp, arith::SubFOp, arith::MulFOp,
             arith::DivFOp, arith::RemFOp, arith::MaxFOp, arith::MinFOp,
-            math::PowFOp,
+            math::PowFOp, math::FPowIOp,
 
             // Integer binary expressions.
             arith::CmpIOp, arith::AddIOp, arith::SubIOp, arith::MulIOp,
@@ -172,6 +172,7 @@ public:
   HANDLE(arith::MaxFOp);
   HANDLE(arith::MinFOp);
   HANDLE(math::PowFOp);
+  HANDLE(math::FPowIOp);
 
   // Integer binary expressions.
   HANDLE(arith::CmpIOp);

@@ -305,8 +305,8 @@ getArrayPartition (Value buffer) {
     }
   }
 
-  llvm::dbgs() << "Buffer:\n";
-  buffer.dump();
+  // llvm::dbgs() << "Buffer:\n";
+  // buffer.dump();
   SmallVector<PartitionKind> kinds;
   SmallVector<unsigned> factors;
   for (int64_t dim = 0; dim < buffer.getType().dyn_cast<MemRefType>().getRank(); dim += 1) {
@@ -337,8 +337,9 @@ getArrayPartition (Value buffer) {
     }
 
       
-    llvm::dbgs() << "Dim: " << dim << " Partition Kind: " << (int)dimPartition.first 
-                    << " Partition factor: " << dimPartition.second << "\n";
+    // llvm::dbgs() << "Dim: " << dim << " Partition Kind: " << (int)dimPartition.first 
+    //                 << " Partition factor: " << dimPartition.second << "\n";
+
     /// For now, we only apply one particular partition method to a certain dimension of the buffer, 
     /// and place corresponding HLS directive macros at its definition and every reference
     kinds.push_back(dimPartition.first);
@@ -358,7 +359,7 @@ bool scalehls::applyAutoArrayPartition(func::FuncOp func) {
     auto factors = partition.second;
     applyArrayPartition(buffer, factors, kinds, /*updateFuncSignature=*/true);
 
-    llvm::dbgs() << "\n\n\n";
+    // llvm::dbgs() << "\n\n\n";
   });
 
   for (auto funcArg : func.getArguments()) {
@@ -367,7 +368,7 @@ bool scalehls::applyAutoArrayPartition(func::FuncOp func) {
     auto factors = partition.second;
     applyArrayPartition(funcArg, factors, kinds, /*updateFuncSignature=*/true);
 
-    llvm::dbgs() << "\n\n\n";
+    // llvm::dbgs() << "\n\n\n";
   }
 
   Builder builder(func.getContext());

@@ -1,5 +1,6 @@
 add_mlir_library(MLIRScaleHLSTransforms
   Dataflow/BalanceDataflowNode.cpp
+  Dataflow/BufferDuplicate.cpp
   Dataflow/BufferizeDataflow.cpp
   Dataflow/ConvertDataflowToFunc.cpp
   Dataflow/CreateDataflowFromAffine.cpp
@@ -46,6 +47,7 @@ add_mlir_library(MLIRScaleHLSTransforms
   Tensor/ConvertTensorToLinalg.cpp
   Tensor/LinalgAnalyzeModel.cpp
   Tensor/LinalgFakeQuantize.cpp
+  Tensor/NormalizeLinalgGenericConstants.cpp
   Tensor/TosaFakeQuantize.cpp
   Tensor/TosaSimplifyGraph.cpp
 
