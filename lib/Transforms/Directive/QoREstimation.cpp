@@ -1,18 +1,18 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/Analysis/Utils.h"
 #include "mlir/Support/FileUtilities.h"
-#include "scalehls/Transforms/Estimator.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Transforms/Estimator.h"
+#include "llmhls/Transforms/Passes.h"
 #include "llvm/Support/MemoryBuffer.h"
 
 using namespace std;
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 //===----------------------------------------------------------------------===//
@@ -20,7 +20,7 @@ using namespace hls;
 //===----------------------------------------------------------------------===//
 
 /// Calculate the overall partition index.
-void ScaleHLSEstimator::getPartitionIndices(Operation *op) {
+void LLMHLSEstimator::getPartitionIndices(Operation *op) {
   auto builder = Builder(op);
   auto access = MemRefAccess(op);
   auto memrefType = access.memref.getType().cast<MemRefType>();
@@ -91,7 +91,7 @@ void ScaleHLSEstimator::getPartitionIndices(Operation *op) {
 }
 
 /// Timing load/store operation honoring the memory ports number limitation.
-void ScaleHLSEstimator::estimateLoadStoreTiming(Operation *op, int64_t begin) {
+void LLMHLSEstimator::estimateLoadStoreTiming(Operation *op, int64_t begin) {
   auto access = MemRefAccess(op);
   auto memref = access.memref;
   auto memrefType = memref.getType().cast<MemRefType>();
@@ -230,7 +230,7 @@ static bool isNoTouch(Operation *op) {
   return false;
 }
 
-int64_t ScaleHLSEstimator::getResMinII(int64_t begin, int64_t end,
+int64_t LLMHLSEstimator::getResMinII(int64_t begin, int64_t end,
                                        MemAccessesMap &map) {
   int64_t II = 1;
   for (auto &pair : map) {
@@ -273,7 +273,7 @@ int64_t ScaleHLSEstimator::getResMinII(int64_t begin, int64_t end,
 }
 
 /// Calculate the minimum dependency II of function.
-int64_t ScaleHLSEstimator::getDepMinII(int64_t II, func::FuncOp func,
+int64_t LLMHLSEstimator::getDepMinII(int64_t II, func::FuncOp func,
                                        MemAccessesMap &map) {
   for (auto &pair : map) {
     auto loadStores = pair.second;
@@ -307,7 +307,7 @@ int64_t ScaleHLSEstimator::getDepMinII(int64_t II, func::FuncOp func,
 }
 
 /// Calculate the minimum dependency II of loop.
-int64_t ScaleHLSEstimator::getDepMinII(int64_t II, AffineForOp forOp,
+int64_t LLMHLSEstimator::getDepMinII(int64_t II, AffineForOp forOp,
                                        MemAccessesMap &map) {
   AffineLoopBand band;
   getLoopIVs(forOp.front(), &band);
@@ -411,7 +411,7 @@ int64_t ScaleHLSEstimator::getDepMinII(int64_t II, AffineForOp forOp,
   return II;
 }
 
-bool ScaleHLSEstimator::visitOp(AffineForOp op, int64_t begin) {
+bool LLMHLSEstimator::visitOp(AffineForOp op, int64_t begin) {
   // If a loop is marked as no_touch, then directly infer the schedule_end with
   // the exist latency.
   if (isNoTouch(op)) {
@@ -514,7 +514,7 @@ bool ScaleHLSEstimator::visitOp(AffineForOp op, int64_t begin) {
 // Other Operation Handlers
 //===----------------------------------------------------------------------===//
 
-bool ScaleHLSEstimator::visitOp(AffineIfOp op, int64_t begin) {
+bool LLMHLSEstimator::visitOp(AffineIfOp op, int64_t begin) {
   auto end = begin;
   auto thenBlock = op.getThenBlock();
 
@@ -540,7 +540,7 @@ bool ScaleHLSEstimator::visitOp(AffineIfOp op, int64_t begin) {
   return true;
 }
 
-bool ScaleHLSEstimator::visitOp(scf::IfOp op, int64_t begin) {
+bool LLMHLSEstimator::visitOp(scf::IfOp op, int64_t begin) {
   auto end = begin;
   auto thenBlock = op.thenBlock();
 
@@ -564,12 +564,12 @@ bool ScaleHLSEstimator::visitOp(scf::IfOp op, int64_t begin) {
   return true;
 }
 
-bool ScaleHLSEstimator::visitOp(func::CallOp op, int64_t begin) {
+bool LLMHLSEstimator::visitOp(func::CallOp op, int64_t begin) {
   auto callee = SymbolTable::lookupNearestSymbolFrom(op, op.getCalleeAttr());
   auto subFunc = dyn_cast<func::FuncOp>(callee);
   assert(subFunc && "callable is not a function operation");
 
-  ScaleHLSEstimator estimator(latencyMap, dspUsageMap, depAnalysis);
+  LLMHLSEstimator estimator(latencyMap, dspUsageMap, depAnalysis);
   estimator.estimateFunc(subFunc);
 
   // We assume enter and leave the subfunction require extra 2 clock cycles.
@@ -628,7 +628,7 @@ static Operation *getSameLevelDstOp(Operation *srcOp, Operation *dstOp) {
 
 /// Estimate the latency of a block with ALAP scheduling strategy, return the
 /// estimated timing attribute.
-TimingAttr ScaleHLSEstimator::estimateBlock(Block &block, int64_t begin) {
+TimingAttr LLMHLSEstimator::estimateBlock(Block &block, int64_t begin) {
   if (!isa<AffineIfOp, scf::IfOp>(block.getParentOp()))
     totalNumOperatorMap.clear();
 
@@ -764,7 +764,7 @@ static Operation *getSurroundingOp(Operation *op) {
   }
 }
 
-void ScaleHLSEstimator::reverseTiming(Block &block) {
+void LLMHLSEstimator::reverseTiming(Block &block) {
   block.walk([&](Operation *op) {
     // Get schedule level.
     if (auto timing = getTiming(op)) {
@@ -799,7 +799,7 @@ void ScaleHLSEstimator::reverseTiming(Block &block) {
   });
 }
 
-void ScaleHLSEstimator::initEstimator(Block &block) {
+void LLMHLSEstimator::initEstimator(Block &block) {
   // Clear global maps and scheduling information.
   memPortInfosMap.clear();
   numOperatorMap.clear();
@@ -813,7 +813,7 @@ void ScaleHLSEstimator::initEstimator(Block &block) {
   });
 }
 
-ResourceAttr ScaleHLSEstimator::calculateResource(Operation *funcOrLoop) {
+ResourceAttr LLMHLSEstimator::calculateResource(Operation *funcOrLoop) {
   // Calculate the static DSP and BRAM utilization.
   int64_t dspNum = 0;
   int64_t bramNum = 0;
@@ -863,7 +863,7 @@ ResourceAttr ScaleHLSEstimator::calculateResource(Operation *funcOrLoop) {
   return ResourceAttr::get(funcOrLoop->getContext(), 0, dspNum, bramNum);
 }
 
-void ScaleHLSEstimator::estimateFunc(func::FuncOp func) {
+void LLMHLSEstimator::estimateFunc(func::FuncOp func) {
   initEstimator(func.front());
   DT = DominanceInfo(func);
 
@@ -911,7 +911,7 @@ void ScaleHLSEstimator::estimateFunc(func::FuncOp func) {
   reverseTiming(func.front());
 }
 
-void ScaleHLSEstimator::estimateLoop(AffineForOp loop, func::FuncOp func) {
+void LLMHLSEstimator::estimateLoop(AffineForOp loop, func::FuncOp func) {
   initEstimator(func.getBody().front());
   DT = DominanceInfo(loop);
   visitOp(loop, 0);
@@ -919,10 +919,10 @@ void ScaleHLSEstimator::estimateLoop(AffineForOp loop, func::FuncOp func) {
 }
 
 //===----------------------------------------------------------------------===//
-// Entry of scalehls-opt
+// Entry of llmhls-opt
 //===----------------------------------------------------------------------===//
 
-void scalehls::getLatencyMap(llvm::json::Object *config,
+void llmhls::getLatencyMap(llvm::json::Object *config,
                              llvm::StringMap<int64_t> &latencyMap) {
   auto frequency =
       config->getObject(config->getString("frequency").value_or("100MHz"));
@@ -934,7 +934,7 @@ void scalehls::getLatencyMap(llvm::json::Object *config,
   latencyMap["fexp"] = frequency->getInteger("fexp").value_or(8);
 }
 
-void scalehls::getDspUsageMap(llvm::json::Object *config,
+void llmhls::getDspUsageMap(llvm::json::Object *config,
                               llvm::StringMap<int64_t> &dspUsageMap) {
   auto dspUsage = config->getObject("dsp_usage");
 
@@ -946,7 +946,7 @@ void scalehls::getDspUsageMap(llvm::json::Object *config,
 }
 
 namespace {
-struct QoREstimation : public scalehls::QoREstimationBase<QoREstimation> {
+struct QoREstimation : public llmhls::QoREstimationBase<QoREstimation> {
   QoREstimation() = default;
   QoREstimation(std::string qorTargetSpec) { targetSpec = qorTargetSpec; }
 
@@ -986,12 +986,12 @@ struct QoREstimation : public scalehls::QoREstimationBase<QoREstimation> {
     // estimating the top function.
     for (auto func : module.getOps<func::FuncOp>())
       if (hasTopFuncAttr(func))
-        ScaleHLSEstimator(latencyMap, dspUsageMap, true).estimateFunc(func);
+        LLMHLSEstimator(latencyMap, dspUsageMap, true).estimateFunc(func);
   }
 };
 } // namespace
 
 std::unique_ptr<Pass>
-scalehls::createQoREstimationPass(std::string qorTargetSpec) {
+llmhls::createQoREstimationPass(std::string qorTargetSpec) {
   return std::make_unique<QoREstimation>(qorTargetSpec);
 }

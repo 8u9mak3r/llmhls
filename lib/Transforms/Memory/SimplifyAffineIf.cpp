@@ -1,16 +1,16 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/Analysis/AffineStructures.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Dialect/HLS/Utils.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Dialect/HLS/Utils.h"
+#include "llmhls/Transforms/Passes.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 namespace {
 struct RemoveRedundantIf : public OpRewritePattern<mlir::AffineIfOp> {
@@ -131,6 +131,6 @@ struct SimplifyAffineIf : public SimplifyAffineIfBase<SimplifyAffineIf> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createSimplifyAffineIfPass() {
+std::unique_ptr<Pass> llmhls::createSimplifyAffineIfPass() {
   return std::make_unique<SimplifyAffineIf>();
 }

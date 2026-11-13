@@ -1,2 +1,2 @@
-// RUN: scalehls-opt -scalehls-legalize-dataflow %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-legalize-dataflow %s | FileCheck %s
 // XFAIL: *

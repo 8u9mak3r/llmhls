@@ -1,16 +1,16 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Conversion/TosaToArith/TosaToArith.h"
 #include "mlir/Dialect/Linalg/Transforms/Transforms.h"
 #include "mlir/Transforms/DialectConversion.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Transforms/Passes.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 namespace {
 // TODO: This is a temporary solution for experiment purpose.
@@ -48,6 +48,6 @@ struct ConvertTensorToLinalg
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createConvertTensorToLinalgPass() {
+std::unique_ptr<Pass> llmhls::createConvertTensorToLinalgPass() {
   return std::make_unique<ConvertTensorToLinalg>();
 }

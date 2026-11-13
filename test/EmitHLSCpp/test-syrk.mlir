@@ -1,4 +1,4 @@
-// RUN: scalehls-translate -scalehls-emit-hlscpp %s | FileCheck %s
+// RUN: llmhls-translate -llmhls-emit-hlscpp %s | FileCheck %s
 
 #map0 = affine_map<(d0, d1) -> (0, d1 mod 2, d0, d1 floordiv 2)>
 #map1 = affine_map<(d0, d1) -> (0, 0, d0, d1)>

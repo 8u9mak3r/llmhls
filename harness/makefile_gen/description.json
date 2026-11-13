@@ -1,6 +1,6 @@
 {
     "name": "top", 
-    "description": ["ScaleHLS generated kernels"],
+    "description": ["LLMHLS generated kernels"],
     "flow": "vitis",
     "keywords": [], 
     "key_concepts": [],

@@ -31,11 +31,11 @@ config.host_arch = "@HOST_ARCH@"
 config.mlir_src_root = "@MLIR_SOURCE_DIR@"
 config.mlir_obj_root = "@MLIR_BINARY_DIR@"
 config.mlir_tools_dir = "@MLIR_TOOLS_DIR@"
-config.scalehls_src_root = "@SCALEHLS_SOURCE_DIR@"
-config.scalehls_obj_root = "@SCALEHLS_BINARY_DIR@"
-config.scalehls_tools_dir = "@SCALEHLS_TOOLS_DIR@"
-config.scalehls_python_packages_dir = "@SCALEHLS_PYTHON_PACKAGES_DIR@"
-config.enable_bindings_python = @SCALEHLS_ENABLE_BINDINGS_PYTHON@
+config.llmhls_src_root = "@LLMHLS_SOURCE_DIR@"
+config.llmhls_obj_root = "@LLMHLS_BINARY_DIR@"
+config.llmhls_tools_dir = "@LLMHLS_TOOLS_DIR@"
+config.llmhls_python_packages_dir = "@LLMHLS_PYTHON_PACKAGES_DIR@"
+config.enable_bindings_python = @LLMHLS_ENABLE_BINDINGS_PYTHON@
 config.polygeist_tools_dir = "@POLYGEIST_TOOLS_DIR@"
 
 # Support substitution of the tools_dir with user parameters. This is
@@ -52,4 +52,4 @@ import lit.llvm
 lit.llvm.initialize(lit_config, config)
 
 # Let the main config do the real work.
-lit_config.load_config(config, "@SCALEHLS_SOURCE_DIR@/test/lit.cfg.py")
+lit_config.load_config(config, "@LLMHLS_SOURCE_DIR@/test/lit.cfg.py")

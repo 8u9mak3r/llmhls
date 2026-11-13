@@ -1,15 +1,15 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 static LogicalResult collapseMemref(Value memref) {
@@ -98,7 +98,7 @@ struct CollapseFuncMemref : public OpRewritePattern<func::FuncOp> {
 
 namespace {
 struct CollapseMemrefUnitDims
-    : public scalehls::CollapseMemrefUnitDimsBase<CollapseMemrefUnitDims> {
+    : public llmhls::CollapseMemrefUnitDimsBase<CollapseMemrefUnitDims> {
   void runOnOperation() override {
     auto func = getOperation();
     auto context = func.getContext();
@@ -110,6 +110,6 @@ struct CollapseMemrefUnitDims
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createCollapseMemrefUnitDimsPass() {
+std::unique_ptr<Pass> llmhls::createCollapseMemrefUnitDimsPass() {
   return std::make_unique<CollapseMemrefUnitDims>();
 }

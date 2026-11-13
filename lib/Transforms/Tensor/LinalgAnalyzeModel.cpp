@@ -1,14 +1,14 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Transforms/Passes.h"
 #include "llvm/Support/Debug.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 namespace {
 struct LinalgAnalyzeModel : public LinalgAnalyzeModelBase<LinalgAnalyzeModel> {
@@ -98,6 +98,6 @@ struct LinalgAnalyzeModel : public LinalgAnalyzeModelBase<LinalgAnalyzeModel> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createLinalgAnalyzeModelPass() {
+std::unique_ptr<Pass> llmhls::createLinalgAnalyzeModelPass() {
   return std::make_unique<LinalgAnalyzeModel>();
 }

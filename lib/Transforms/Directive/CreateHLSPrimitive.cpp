@@ -1,14 +1,14 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Transforms/Passes.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 static IntegerType getIntDataType(Type type) {
@@ -107,6 +107,6 @@ struct CreateHLSPrimitive : public CreateHLSPrimitiveBase<CreateHLSPrimitive> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createCreateHLSPrimitivePass() {
+std::unique_ptr<Pass> llmhls::createCreateHLSPrimitivePass() {
   return std::make_unique<CreateHLSPrimitive>();
 }

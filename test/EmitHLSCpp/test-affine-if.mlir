@@ -1,4 +1,4 @@
-// RUN: scalehls-translate -scalehls-emit-hlscpp %s | FileCheck %s
+// RUN: llmhls-translate -llmhls-emit-hlscpp %s | FileCheck %s
 
 #set0 = affine_set<(d0)[s0]: (d0 + s0 >= 0, d0 * s0 == 0)>
 

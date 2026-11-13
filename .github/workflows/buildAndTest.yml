@@ -1,11 +1,11 @@
 name: Build and Test
 on: [push, pull_request]
 jobs:
-  build-scalehls:
+  build-llmhls:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
-      - name: Get ScaleHLS
+      - name: Get LLMHLS
         uses: actions/checkout@v2
         with:
           submodules: recursive
@@ -42,7 +42,7 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++
           cmake --build . -j $(nproc)
 
-      - name: Build and Test ScaleHLS
+      - name: Build and Test LLMHLS
         run: |
           mkdir -p build
           cd build
@@ -54,4 +54,4 @@ jobs:
             -DLLVM_USE_LINKER=lld \
             -DCMAKE_C_COMPILER=clang \
             -DCMAKE_CXX_COMPILER=clang++
-          cmake --build . --target check-scalehls -j $(nproc)
+          cmake --build . --target check-llmhls -j $(nproc)

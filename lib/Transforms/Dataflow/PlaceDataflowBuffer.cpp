@@ -1,16 +1,16 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
@@ -114,6 +114,6 @@ struct PlaceDataflowBuffer
 } // namespace
 
 std::unique_ptr<Pass>
-scalehls::createPlaceDataflowBufferPass(bool placeExternalBuffer, bool placeTopFuncArgsOnDram) {
+llmhls::createPlaceDataflowBufferPass(bool placeExternalBuffer, bool placeTopFuncArgsOnDram) {
   return std::make_unique<PlaceDataflowBuffer>(placeExternalBuffer, placeTopFuncArgsOnDram);
 }

@@ -1,20 +1,20 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/Analysis/AffineAnalysis.h"
 #include "mlir/IR/Dominance.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Dialect/HLS/Utils.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Dialect/HLS/Utils.h"
+#include "llmhls/Transforms/Passes.h"
 #include "llvm/Support/Debug.h"
 
-#define DEBUG_TYPE "scalehls-reduce-initial-interval"
+#define DEBUG_TYPE "llmhls-reduce-initial-interval"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 /// Find a chain of commutative operators starting from "headOps" and ended with
 /// the "store". "headOps" is a list of single-use operations starting with "op"
@@ -183,6 +183,6 @@ struct ReduceInitialInterval
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createReduceInitialIntervalPass() {
+std::unique_ptr<Pass> llmhls::createReduceInitialIntervalPass() {
   return std::make_unique<ReduceInitialInterval>();
 }

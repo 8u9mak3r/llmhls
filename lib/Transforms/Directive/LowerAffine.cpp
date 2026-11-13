@@ -1,6 +1,6 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
@@ -10,11 +10,11 @@
 #include "mlir/IR/IntegerSet.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 class LowerAffineFor : public OpRewritePattern<AffineForOp> {
@@ -107,6 +107,6 @@ struct LowerAffine : public LowerAffineBase<LowerAffine> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createLowerAffinePass() {
+std::unique_ptr<Pass> llmhls::createLowerAffinePass() {
   return std::make_unique<LowerAffine>();
 }

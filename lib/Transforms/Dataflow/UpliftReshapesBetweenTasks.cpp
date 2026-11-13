@@ -1,11 +1,11 @@
 #include "mlir/IR/Dominance.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 #include <cassert>
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 /// Assume we got a couple of depending tasks here:
@@ -750,6 +750,6 @@ struct UpliftReshapesBetweenTasks
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createUpliftReshapesBetweenTasksPass() {
+std::unique_ptr<Pass> llmhls::createUpliftReshapesBetweenTasksPass() {
   return std::make_unique<UpliftReshapesBetweenTasks>();
 }

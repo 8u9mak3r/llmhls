@@ -1,16 +1,16 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/Analysis/LoopAnalysis.h"
 #include "mlir/Dialect/Affine/LoopUtils.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 namespace {
 struct RaiseAffineToCopy : public RaiseAffineToCopyBase<RaiseAffineToCopy> {
@@ -77,6 +77,6 @@ struct RaiseAffineToCopy : public RaiseAffineToCopyBase<RaiseAffineToCopy> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createRaiseAffineToCopyPass() {
+std::unique_ptr<Pass> llmhls::createRaiseAffineToCopyPass() {
   return std::make_unique<RaiseAffineToCopy>();
 }

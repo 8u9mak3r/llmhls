@@ -1,4 +1,4 @@
-// RUN: scalehls-translate -scalehls-emit-hlscpp %s | FileCheck %s
+// RUN: llmhls-translate -llmhls-emit-hlscpp %s | FileCheck %s
 
 #two = affine_map<(d0)[s0] -> (d0, d0 + s0)>
 #three = affine_map<(d0)[s0] -> (d0 - s0, d0, d0 + s0)>

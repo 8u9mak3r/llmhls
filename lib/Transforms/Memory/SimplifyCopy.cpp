@@ -1,19 +1,19 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/IR/Dominance.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 #include "llvm/Support/Debug.h"
 
-#define DEBUG_TYPE "scalehls-simplify-copy"
+#define DEBUG_TYPE "llmhls-simplify-copy"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
@@ -205,6 +205,6 @@ struct SimplifyCopy : public SimplifyCopyBase<SimplifyCopy> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createSimplifyCopyPass() {
+std::unique_ptr<Pass> llmhls::createSimplifyCopyPass() {
   return std::make_unique<SimplifyCopy>();
 }

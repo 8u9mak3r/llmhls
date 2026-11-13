@@ -61,4 +61,4 @@ For build and testing:
 
 # Some Other Temporary Rules
 
-- Ignore regression tests of this repo, which means ignore the errors triggered by `check-scalehls` because of all the modifications I have made contaminating the original compiler pipeline. Just wait for me restoring all the passes I modified, as to the new passes I added/modified, I'll set up some opts to manually trigger them.
+- Ignore regression tests of this repo, which means ignore the errors triggered by `check-llmhls` because of all the modifications I have made contaminating the original compiler pipeline. Just wait for me restoring all the passes I modified, as to the new passes I added/modified, I'll set up some opts to manually trigger them.

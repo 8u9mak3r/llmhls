@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-create-dataflow-from-linalg %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-create-dataflow-from-linalg %s | FileCheck %s
 
 // CHECK: module attributes {torch.debug_module_name = "ResNet"} {
 // CHECK:   func.func @forward(%arg0: tensor<1x64x56x56xi8>, %arg1: tensor<1000x64xi8>, %arg2: tensor<64x64x1x1xi8>, %arg3: tensor<64x64x3x3xi8>, %arg4: tensor<64x64x3x3xi8>) -> tensor<1x1000xi8> {

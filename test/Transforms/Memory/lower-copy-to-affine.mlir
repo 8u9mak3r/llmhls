@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-lower-copy-to-affine %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-lower-copy-to-affine %s | FileCheck %s
 
 // CHECK: func.func @forward(%arg0: memref<1x64x56x56xi8>) {
 // CHECK:   %c0 = arith.constant 0 : index

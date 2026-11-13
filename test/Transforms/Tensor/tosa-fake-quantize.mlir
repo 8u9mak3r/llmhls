@@ -1,2 +1,2 @@
-// RUN: scalehls-opt -scalehls-tosa-fake-quantize %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-tosa-fake-quantize %s | FileCheck %s
 // XFAIL: *

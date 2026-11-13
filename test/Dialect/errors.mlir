@@ -1,2 +1,2 @@
-// RUN: scalehls-opt %s | FileCheck %s
+// RUN: llmhls-opt %s | FileCheck %s
 // XFAIL: *

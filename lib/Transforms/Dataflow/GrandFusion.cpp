@@ -1,12 +1,12 @@
 #include "mlir/IR/Dominance.h"
 #include "mlir/Dialect/Math/IR/Math.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 #include <cassert>
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
@@ -487,6 +487,6 @@ struct GrandFusion
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createGrandFusionPass() {
+std::unique_ptr<Pass> llmhls::createGrandFusionPass() {
   return std::make_unique<GrandFusion>();
 }

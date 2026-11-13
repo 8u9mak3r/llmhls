@@ -1,2 +1,2 @@
-// RUN: scalehls-opt -scalehls-reduce-initial-interval %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-reduce-initial-interval %s | FileCheck %s
 // XFAIL: *

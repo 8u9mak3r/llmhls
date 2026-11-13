@@ -1,16 +1,16 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/Analysis/AffineAnalysis.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
@@ -143,7 +143,7 @@ struct MulIRaisePattern : public OpRewritePattern<arith::MulIOp> {
 };
 } // namespace
 
-bool scalehls::applyFuncPreprocess(func::FuncOp func, bool isTopFunc) {
+bool llmhls::applyFuncPreprocess(func::FuncOp func, bool isTopFunc) {
   // auto builder = OpBuilder(func);
   auto context = func.getContext();
 
@@ -184,7 +184,7 @@ bool scalehls::applyFuncPreprocess(func::FuncOp func, bool isTopFunc) {
   patterns.add<MulIRaisePattern>(context);
   patterns.add<AffineStoreUndefFoldPattern>(context);
   patterns.add<AllocaDemotePattern>(context);
-  scalehls::populateBufferConversionPatterns(patterns);
+  llmhls::populateBufferConversionPatterns(patterns);
   vector::populateVectorTransferLoweringPatterns(patterns);
   (void)applyPatternsAndFoldGreedily(func, std::move(patterns));
 
@@ -212,6 +212,6 @@ struct FuncPreprocess : public FuncPreprocessBase<FuncPreprocess> {
 } // namespace
 
 std::unique_ptr<Pass>
-scalehls::createFuncPreprocessPass(std::string hlsTopFunc) {
+llmhls::createFuncPreprocessPass(std::string hlsTopFunc) {
   return std::make_unique<FuncPreprocess>(hlsTopFunc);
 }

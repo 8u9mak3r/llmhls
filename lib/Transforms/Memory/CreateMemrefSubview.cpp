@@ -1,20 +1,20 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/IR/AffineExprVisitor.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
 struct CreateMemrefSubview
-    : public scalehls::CreateMemrefSubviewBase<CreateMemrefSubview> {
+    : public llmhls::CreateMemrefSubviewBase<CreateMemrefSubview> {
   CreateMemrefSubview() = default;
   CreateMemrefSubview(CreateSubviewMode argCreateSubviewMode) {
     createSubviewMode = argCreateSubviewMode;
@@ -209,6 +209,6 @@ void CreateMemrefSubview::runOnOperation() {
 }
 
 std::unique_ptr<Pass>
-scalehls::createCreateMemrefSubviewPass(CreateSubviewMode createSubviewMode) {
+llmhls::createCreateMemrefSubviewPass(CreateSubviewMode createSubviewMode) {
   return std::make_unique<CreateMemrefSubview>(createSubviewMode);
 }

@@ -1,14 +1,14 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Transforms/Passes.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 using CallToFuncMap = llvm::SmallDenseMap<func::CallOp, func::FuncOp>;
@@ -97,6 +97,6 @@ struct FuncDuplication : public FuncDuplicationBase<FuncDuplication> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createFuncDuplicationPass() {
+std::unique_ptr<Pass> llmhls::createFuncDuplicationPass() {
   return std::make_unique<FuncDuplication>();
 }

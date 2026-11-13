@@ -1,15 +1,15 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
@@ -116,6 +116,6 @@ struct BalanceDataflowNode
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createBalanceDataflowNodePass() {
+std::unique_ptr<Pass> llmhls::createBalanceDataflowNodePass() {
   return std::make_unique<BalanceDataflowNode>();
 }

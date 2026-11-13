@@ -20,8 +20,8 @@
 #include "mlir/IR/AffineMap.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/Transforms/Passes.h"
-#include "scalehls/Dialect/HLS/Utils.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Dialect/HLS/Utils.h"
+#include "llmhls/Transforms/Passes.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/SetVector.h"
@@ -33,7 +33,7 @@
 #define DEBUG_TYPE "affine-loop-fusion"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
@@ -63,7 +63,7 @@ struct LoopFusion : public AffineLoopFusionBase<LoopFusion> {
 
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createAffineLoopFusionPass(
+std::unique_ptr<Pass> llmhls::createAffineLoopFusionPass(
     double computeToleranceThreshold, unsigned fastMemorySpace,
     uint64_t localBufSizeThreshold, bool maximalFusion,
     enum AffineFusionMode affineFusionMode) {

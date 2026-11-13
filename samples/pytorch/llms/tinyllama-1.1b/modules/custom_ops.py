@@ -8,7 +8,7 @@ def _rotate_half(x):
     return torch.cat((-x2, x1), dim=-1)
 
 
-@torch.library.custom_op("scalehls::rope", mutates_args=())
+@torch.library.custom_op("llmhls::rope", mutates_args=())
 def rope(
     query: Tensor,
     key: Tensor,
@@ -37,7 +37,7 @@ def _rope_fake(query, key, inv_freq):
     )
 
 
-@torch.library.custom_op("scalehls::gqa", mutates_args=())
+@torch.library.custom_op("llmhls::gqa", mutates_args=())
 def gqa(
     query: Tensor,
     key: Tensor,

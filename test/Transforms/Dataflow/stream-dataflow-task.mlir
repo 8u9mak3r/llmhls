@@ -1,2 +1,2 @@
-// RUN: scalehls-opt -scalehls-stream-dataflow-task %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-stream-dataflow-task %s | FileCheck %s
 // XFAIL: *

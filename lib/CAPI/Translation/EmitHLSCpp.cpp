@@ -1,17 +1,17 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
-#include "scalehls-c/EmitHLSCpp.h"
+#include "llmhls-c/EmitHLSCpp.h"
 #include "mlir/CAPI/IR.h"
 #include "mlir/CAPI/Support.h"
 #include "mlir/CAPI/Utils.h"
-#include "scalehls/Translation/EmitHLSCpp.h"
+#include "llmhls/Translation/EmitHLSCpp.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 MlirLogicalResult mlirEmitHlsCpp(MlirModule module, MlirStringCallback callback,
                                  void *userData) {

@@ -1,27 +1,27 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/Analysis/AffineAnalysis.h"
 #include "mlir/Dialect/Affine/Analysis/Utils.h"
 #include "mlir/Dialect/Affine/LoopUtils.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 #include "llvm/Support/Debug.h"
 
-#define DEBUG_TYPE "scalehls"
+#define DEBUG_TYPE "llmhls"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 /// TODO: support to pass in permutation map.
 
 /// Optimize loop order. Loops associated with memory access dependencies are
 /// moved to an as outer as possible location of the input loop band. If
 /// "reverse" is true, as inner as possible.
-bool scalehls::applyAffineLoopOrderOpt(AffineLoopBand &band,
+bool llmhls::applyAffineLoopOrderOpt(AffineLoopBand &band,
                                        ArrayRef<unsigned> permMap,
                                        bool reverse) {
   LLVM_DEBUG(llvm::dbgs() << "Loop order opt ";);
@@ -207,6 +207,6 @@ struct AffineLoopOrderOpt : public AffineLoopOrderOptBase<AffineLoopOrderOpt> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createAffineLoopOrderOptPass() {
+std::unique_ptr<Pass> llmhls::createAffineLoopOrderOptPass() {
   return std::make_unique<AffineLoopOrderOpt>();
 }

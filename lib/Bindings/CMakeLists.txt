@@ -1,3 +1,3 @@
-if(SCALEHLS_ENABLE_BINDINGS_PYTHON)
+if(LLMHLS_ENABLE_BINDINGS_PYTHON)
   add_subdirectory(Python)
 endif()

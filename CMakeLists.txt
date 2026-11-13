@@ -17,11 +17,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  if (SCALEHLS_ENABLE_BINDINGS_PYTHON)
-    message(FATAL_ERROR "ScaleHLS Python bindings require a unified build.")
+  if (LLMHLS_ENABLE_BINDINGS_PYTHON)
+    message(FATAL_ERROR "LLMHLS Python bindings require a unified build.")
   endif()
 
-  project(scalehls LANGUAGES CXX C)
+  project(llmhls LANGUAGES CXX C)
 
   set(LLVM_SOURCE_DIR ${CMAKE_SOURCE_DIR}/Polygeist/llvm-project/llvm)
   find_package(MLIR REQUIRED CONFIG)
@@ -58,32 +58,32 @@ if (MSVC_IDE OR XCODE)
 endif()
 set(LLVM_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
 
-set(SCALEHLS_MAIN_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR} ) # --src-root
-set(SCALEHLS_MAIN_INCLUDE_DIR ${SCALEHLS_MAIN_SRC_DIR}/include)
+set(LLMHLS_MAIN_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR} ) # --src-root
+set(LLMHLS_MAIN_INCLUDE_DIR ${LLMHLS_MAIN_SRC_DIR}/include)
 
-set(SCALEHLS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(SCALEHLS_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
-set(SCALEHLS_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include )
-set(SCALEHLS_TOOLS_DIR ${CMAKE_BINARY_DIR}/bin)
-set(SCALEHLS_UTILS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/utils)
-set(SCALEHLS_PYTHON_PACKAGES_DIR ${SCALEHLS_BINARY_DIR}/python_packages)
+set(LLMHLS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(LLMHLS_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(LLMHLS_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include )
+set(LLMHLS_TOOLS_DIR ${CMAKE_BINARY_DIR}/bin)
+set(LLMHLS_UTILS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/utils)
+set(LLMHLS_PYTHON_PACKAGES_DIR ${LLMHLS_BINARY_DIR}/python_packages)
 # TODO: This should not be hard-coded.
-set(POLYGEIST_TOOLS_DIR ${SCALEHLS_MAIN_SRC_DIR}/polygeist/build/bin)
+set(POLYGEIST_TOOLS_DIR ${LLMHLS_MAIN_SRC_DIR}/polygeist/build/bin)
 
 list(APPEND CMAKE_MODULE_PATH "${MLIR_MAIN_SRC_DIR}/cmake/modules")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${MLIR_INCLUDE_DIRS})
-include_directories(${SCALEHLS_MAIN_INCLUDE_DIR})
-include_directories(${SCALEHLS_INCLUDE_DIR})
+include_directories(${LLMHLS_MAIN_INCLUDE_DIR})
+include_directories(${LLMHLS_INCLUDE_DIR})
 link_directories(${LLVM_BUILD_LIBRARY_DIR})
 add_definitions(${LLVM_DEFINITIONS})
 
-option(SCALEHLS_ENABLE_BINDINGS_PYTHON "Enables ScaleHLS Python bindings." OFF)
+option(LLMHLS_ENABLE_BINDINGS_PYTHON "Enables LLMHLS Python bindings." OFF)
 
-if(SCALEHLS_ENABLE_BINDINGS_PYTHON)
-  message(STATUS "ScaleHLS Python bindings are enabled.")
+if(LLMHLS_ENABLE_BINDINGS_PYTHON)
+  message(STATUS "LLMHLS Python bindings are enabled.")
 
   include(MLIRDetectPythonEnv)
   find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
@@ -100,10 +100,10 @@ if(SCALEHLS_ENABLE_BINDINGS_PYTHON)
                  "suffix = '${PYTHON_MODULE_SUFFIX}', "
                  "extension = '${PYTHON_MODULE_EXTENSION}'")
 else()
-  message(STATUS "ScaleHLS Python bindings are disabled.")
+  message(STATUS "LLMHLS Python bindings are disabled.")
 endif()
 
-add_subdirectory(include/scalehls)
+add_subdirectory(include/llmhls)
 add_subdirectory(lib)
 add_subdirectory(test)
 add_subdirectory(tools)

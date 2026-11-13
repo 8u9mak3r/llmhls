@@ -1,8 +1,8 @@
 #!/bin/bash
 BUDDY_BUILD_DIR := /home/dahaoming/buddy-mlir/build/
 BUDDY_OPT := ${BUDDY_BUILD_DIR}/bin/buddy-opt
-SCALEHLS_BUILD_DIR := /home/dahaoming/scalehls-mlir/build/
-SCALEHLS_OPT := ${BUDDY_BUILD_DIR}/bin/scalehls-opt
+LLMHLS_BUILD_DIR := /home/dahaoming/llmhls-mlir/build/
+LLMHLS_OPT := ${BUDDY_BUILD_DIR}/bin/llmhls-opt
 
 linalg-i8:
 	@${BUDDY_OPT} ./subgraph0.mlir \

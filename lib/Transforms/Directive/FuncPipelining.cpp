@@ -1,14 +1,14 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 /// Apply function pipelining to the input function, all contained loops are
@@ -38,6 +38,6 @@ struct FuncPipelining : public FuncPipeliningBase<FuncPipelining> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createFuncPipeliningPass() {
+std::unique_ptr<Pass> llmhls::createFuncPipeliningPass() {
   return std::make_unique<FuncPipelining>();
 }

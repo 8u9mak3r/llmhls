@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-simplify-affine-if %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-simplify-affine-if %s | FileCheck %s
 
 // CHECK: #set = affine_set<(d0, d1) : (d0 - d1 >= 0)>
 // CHECK: #set1 = affine_set<(d0) : (d0 == 0)>

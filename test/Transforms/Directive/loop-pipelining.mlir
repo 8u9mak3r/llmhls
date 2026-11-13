@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-loop-pipelining="pipeline-level=3 target-ii=2" %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-loop-pipelining="pipeline-level=3 target-ii=2" %s | FileCheck %s
 
 // CHECK: #map = affine_map<(d0) -> (d0 + 1)>
 // CHECK: #set = affine_set<(d0, d1) : (d0 - d1 >= 0)>

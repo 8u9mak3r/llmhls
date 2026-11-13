@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-remove-variable-bound %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-remove-variable-bound %s | FileCheck %s
 
 // CHECK: #set = affine_set<(d0, d1) : (d1 - (d0 + 16) >= 0)>
 // CHECK: #set1 = affine_set<(d0, d1) : (d0 - d1 + 16 >= 0)>

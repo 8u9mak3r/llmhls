@@ -1,4 +1,4 @@
-add_subdirectory(pyscalehls)
-add_subdirectory(scalehls-opt)
-add_subdirectory(scalehls-translate)
-add_subdirectory(scalehls-lsp-server)
+add_subdirectory(pyllmhls)
+add_subdirectory(llmhls-opt)
+add_subdirectory(llmhls-translate)
+add_subdirectory(llmhls-lsp-server)

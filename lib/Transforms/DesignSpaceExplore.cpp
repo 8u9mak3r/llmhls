@@ -1,24 +1,24 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/Analysis/LoopAnalysis.h"
 #include "mlir/Dialect/Affine/Analysis/Utils.h"
 #include "mlir/Support/FileUtilities.h"
-#include "scalehls/Transforms/Explorer.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Transforms/Explorer.h"
+#include "llmhls/Transforms/Passes.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include <numeric>
 // #include <pthread.h>
 
-#define DEBUG_TYPE "scalehls"
+#define DEBUG_TYPE "llmhls"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 /// Update paretoPoints to remove design points that are not pareto frontiers.
 template <typename DesignPointType>
@@ -73,7 +73,7 @@ static void emitTileListDebugInfo(FactorList tileList) {
 }
 
 LoopDesignSpace::LoopDesignSpace(func::FuncOp func, AffineLoopBand &band,
-                                 ScaleHLSEstimator &estimator,
+                                 LLMHLSEstimator &estimator,
                                  unsigned maxDspNum, unsigned maxExplParallel,
                                  unsigned maxLoopParallel, bool directiveOnly)
     : func(func), band(band), estimator(estimator), maxDspNum(maxDspNum) {
@@ -555,7 +555,7 @@ bool FuncDesignSpace::exportParetoDesigns(unsigned outputNum,
 // Explorer Class Definition
 //===----------------------------------------------------------------------===//
 
-bool ScaleHLSExplorer::emitQoRDebugInfo(func::FuncOp func,
+bool LLMHLSExplorer::emitQoRDebugInfo(func::FuncOp func,
                                         std::string message) {
   estimator.estimateFunc(func);
   // auto latency = getTiming(func).getLatency();
@@ -583,7 +583,7 @@ static int64_t getInnerParallelism(Block &block) {
   return std::max(count, (int64_t)1);
 }
 
-bool ScaleHLSExplorer::evaluateFuncPipeline(func::FuncOp func) { return true; }
+bool LLMHLSExplorer::evaluateFuncPipeline(func::FuncOp func) { return true; }
 
 /// DSE Stage1: Simplify loop nests by unrolling. If we take the following loops
 /// as example, where each nodes represents one sequential loop nests (LN). In
@@ -617,7 +617,7 @@ bool ScaleHLSExplorer::evaluateFuncPipeline(func::FuncOp func) { return true; }
 ///   LN2 LN5
 ///
 /// TODO: there is a large design space in this simplification.
-bool ScaleHLSExplorer::simplifyLoopNests(func::FuncOp func) {
+bool LLMHLSExplorer::simplifyLoopNests(func::FuncOp func) {
   LLVM_DEBUG(llvm::dbgs()
                  << "----------\nStage1: Simplify loop nests structure...\n";);
 
@@ -697,7 +697,7 @@ bool ScaleHLSExplorer::simplifyLoopNests(func::FuncOp func) {
 /// will be applied to each leaf LNs, and the best one which meets the resource
 /// constraints will be picked as the final solution.
 /// TODO: better handle variable bound kernels.
-bool ScaleHLSExplorer::optimizeLoopBands(func::FuncOp func,
+bool LLMHLSExplorer::optimizeLoopBands(func::FuncOp func,
                                          bool directiveOnly) {
   LLVM_DEBUG(llvm::dbgs() << "----------\nStage2: Apply loop perfection, loop "
                              "order opt, and remove variable loop bound...\n";);
@@ -724,7 +724,7 @@ bool ScaleHLSExplorer::optimizeLoopBands(func::FuncOp func,
 }
 
 /// DSE Stage3: Explore the function design space through dynamic programming.
-bool ScaleHLSExplorer::exploreDesignSpace(func::FuncOp func, bool directiveOnly,
+bool LLMHLSExplorer::exploreDesignSpace(func::FuncOp func, bool directiveOnly,
                                           StringRef outputRootPath,
                                           StringRef csvRootPath) {
   LLVM_DEBUG(llvm::dbgs() << "----------\nStage3: Conduct top function design "
@@ -803,7 +803,7 @@ bool ScaleHLSExplorer::exploreDesignSpace(func::FuncOp func, bool directiveOnly,
 //===----------------------------------------------------------------------===//
 
 /// This is a temporary approach that does not scale.
-void ScaleHLSExplorer::applyDesignSpaceExplore(func::FuncOp func,
+void LLMHLSExplorer::applyDesignSpaceExplore(func::FuncOp func,
                                                bool directiveOnly,
                                                StringRef outputRootPath,
                                                StringRef csvRootPath) {
@@ -886,8 +886,8 @@ struct DesignSpaceExplore : public DesignSpaceExploreBase<DesignSpaceExplore> {
       maxDspNum = UINT_MAX;
 
     // Initialize an performance and resource estimator.
-    auto estimator = ScaleHLSEstimator(latencyMap, dspUsageMap, true);
-    auto explorer = ScaleHLSExplorer(estimator, outputNum, maxDspNum,
+    auto estimator = LLMHLSEstimator(latencyMap, dspUsageMap, true);
+    auto explorer = LLMHLSExplorer(estimator, outputNum, maxDspNum,
                                      maxInitParallel, maxExplParallel,
                                      maxLoopParallel, maxIterNum, maxDistance);
 
@@ -903,6 +903,6 @@ struct DesignSpaceExplore : public DesignSpaceExploreBase<DesignSpaceExplore> {
 } // namespace
 
 std::unique_ptr<Pass>
-scalehls::createDesignSpaceExplorePass(std::string dseTargetSpec) {
+llmhls::createDesignSpaceExplorePass(std::string dseTargetSpec) {
   return std::make_unique<DesignSpaceExplore>(dseTargetSpec);
 }

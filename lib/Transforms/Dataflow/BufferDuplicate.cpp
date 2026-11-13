@@ -1,17 +1,17 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/IR/PatternMatch.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
@@ -189,6 +189,6 @@ struct BufferDuplicate : public BufferDuplicateBase<BufferDuplicate> {
 
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createBufferDuplicatePass() {
+std::unique_ptr<Pass> llmhls::createBufferDuplicatePass() {
   return std::make_unique<BufferDuplicate>();
 }

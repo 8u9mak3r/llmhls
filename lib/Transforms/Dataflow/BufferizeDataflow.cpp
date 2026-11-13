@@ -1,16 +1,16 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/IR/Dominance.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
@@ -140,7 +140,7 @@ struct ConvertGetGlobalToConstBuffer
 };
 } // namespace
 
-void scalehls::populateBufferConversionPatterns(RewritePatternSet &patterns) {
+void llmhls::populateBufferConversionPatterns(RewritePatternSet &patterns) {
   auto context = patterns.getContext();
   patterns.add<ConvertAllocToBufferWithInitValue<memref::AllocOp>>(context);
   patterns.add<ConvertAllocToBufferWithInitValue<memref::AllocaOp>>(context);
@@ -167,6 +167,6 @@ struct BufferizeDataflow : public BufferizeDataflowBase<BufferizeDataflow> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createBufferizeDataflowPass() {
+std::unique_ptr<Pass> llmhls::createBufferizeDataflowPass() {
   return std::make_unique<BufferizeDataflow>();
 }

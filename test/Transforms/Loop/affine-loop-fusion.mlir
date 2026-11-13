@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-affine-loop-fusion="fusion-compute-tolerance=100.0" %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-affine-loop-fusion="fusion-compute-tolerance=100.0" %s | FileCheck %s
 
 // CHECK: #map = affine_map<(d0, d1, d2) -> (0)>
 // CHECK: #map1 = affine_map<(d0, d1, d2) -> (d0)>

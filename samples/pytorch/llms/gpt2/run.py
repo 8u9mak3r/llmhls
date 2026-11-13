@@ -9,8 +9,8 @@ import torchao.quantization as aoq
 REPO_ROOT = Path(__file__).resolve().parents[4]
 SAMPLE_DIR = Path(__file__).resolve().parent
 BUDDY_OPT = REPO_ROOT / "buddy-mlir/build/bin/buddy-opt"
-SCALEHLS_OPT = REPO_ROOT / "build/bin/scalehls-opt"
-SCALEHLS_TRANSLATE = REPO_ROOT / "build/bin/scalehls-translate"
+LLMHLS_OPT = REPO_ROOT / "build/bin/llmhls-opt"
+LLMHLS_TRANSLATE = REPO_ROOT / "build/bin/llmhls-translate"
 TOSA_TO_LINALG_PIPELINE = (
     "builtin.module(func.func(tosa-to-linalg-named, tosa-to-linalg, "
     "tosa-to-tensor, tosa-to-arith, canonicalize))"
@@ -57,13 +57,13 @@ def generate_hls_cpp(hls_cpp_output_dir):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     opt_command = [
-        str(SCALEHLS_OPT),
+        str(LLMHLS_OPT),
         str(decoder_path),
         "-scaleflow-pytorch-pipeline=top-func=forward start-point=2 debug-point=0",
     ]
     translate_command = [
-        str(SCALEHLS_TRANSLATE),
-        "-scalehls-emit-hlscpp",
+        str(LLMHLS_TRANSLATE),
+        "-llmhls-emit-hlscpp",
         f"-hls-cpp-output-dir={output_dir}",
     ]
     with subprocess.Popen(

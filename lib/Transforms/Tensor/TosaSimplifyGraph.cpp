@@ -1,15 +1,15 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/IR/Matchers.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Transforms/Passes.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 /// A helper to get permuatation vector from value.
 static SmallVector<int64_t, 6> getPermValues(Value perm) {
@@ -125,6 +125,6 @@ struct TosaSimplifyGraph : public TosaSimplifyGraphBase<TosaSimplifyGraph> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createTosaSimplifyGraphPass() {
+std::unique_ptr<Pass> llmhls::createTosaSimplifyGraphPass() {
   return std::make_unique<TosaSimplifyGraph>();
 }

@@ -1,17 +1,17 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
-#include "scalehls/Dialect/HLS/Analysis.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Dialect/HLS/Analysis.h"
+#include "llmhls/Transforms/Utils.h"
 #include "llvm/Support/Debug.h"
 
 #define DEBUG_TYPE "dataflow-analysis"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 ComplexityAnalysis::ComplexityAnalysis(func::FuncOp func) {

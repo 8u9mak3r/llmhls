@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -buffer-loop-hoisting -scalehls-affine-loop-perfection %s | FileCheck %s
+// RUN: llmhls-opt -buffer-loop-hoisting -llmhls-affine-loop-perfection %s | FileCheck %s
 
 // CHECK: #set = affine_set<(d0) : (d0 == 0)>
 // CHECK: #set1 = affine_set<(d0) : (-d0 + 31 == 0)>

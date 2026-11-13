@@ -1,19 +1,19 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/Analysis/LoopAnalysis.h"
 #include "mlir/Dialect/Affine/LoopUtils.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 /// Fully unroll all loops insides of a block.
-bool scalehls::applyFullyLoopUnrolling(Block &block, unsigned maxIterNum) {
+bool llmhls::applyFullyLoopUnrolling(Block &block, unsigned maxIterNum) {
   for (unsigned i = 0; i < maxIterNum; ++i) {
     bool hasFullyUnrolled = true;
     block.walk([&](AffineForOp loop) {
@@ -31,7 +31,7 @@ bool scalehls::applyFullyLoopUnrolling(Block &block, unsigned maxIterNum) {
 }
 
 /// Apply unroll and jam to the loop band with the given overall unroll factor.
-bool scalehls::applyLoopUnrollJam(AffineLoopBand &band,
+bool llmhls::applyLoopUnrollJam(AffineLoopBand &band,
                                   unsigned overallUnrollFactor) {
   assert(!band.empty() && "no loops provided");
   if (overallUnrollFactor == 1)
@@ -43,7 +43,7 @@ bool scalehls::applyLoopUnrollJam(AffineLoopBand &band,
 }
 
 /// Apply unroll and jam to the loop band with the given unroll factors.
-bool scalehls::applyLoopUnrollJam(AffineLoopBand &band,
+bool llmhls::applyLoopUnrollJam(AffineLoopBand &band,
                                   FactorList unrollFactors) {
   assert(!band.empty() && "no loops provided");
   if (llvm::all_of(unrollFactors, [](unsigned factor) { return factor == 1; }))
@@ -99,7 +99,7 @@ struct AffineLoopUnrollJam
 } // namespace
 
 std::unique_ptr<Pass>
-scalehls::createAffineLoopUnrollJamPass(unsigned loopUnrollFactor,
+llmhls::createAffineLoopUnrollJamPass(unsigned loopUnrollFactor,
                                         bool unrollPointLoopOnly) {
   return std::make_unique<AffineLoopUnrollJam>(loopUnrollFactor,
                                                unrollPointLoopOnly);

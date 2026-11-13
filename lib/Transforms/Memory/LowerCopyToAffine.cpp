@@ -1,16 +1,16 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/IR/Dominance.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
@@ -87,6 +87,6 @@ struct LowerCopyToAffine : public LowerCopyToAffineBase<LowerCopyToAffine> {
 } // namespace
 
 std::unique_ptr<Pass>
-scalehls::createLowerCopyToAffinePass(bool internalCopyOnly) {
+llmhls::createLowerCopyToAffinePass(bool internalCopyOnly) {
   return std::make_unique<LowerCopyToAffine>(internalCopyOnly);
 }

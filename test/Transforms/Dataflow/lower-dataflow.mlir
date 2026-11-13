@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-lower-dataflow %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-lower-dataflow %s | FileCheck %s
 
 // CHECK: module attributes {torch.debug_module_name = "ResNet"} {
 // CHECK: }

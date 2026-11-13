@@ -1,16 +1,16 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/IR/Dominance.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 
@@ -263,7 +263,7 @@ struct CreateDataflowFromLinalg
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createCreateDataflowFromLinalgPass(bool greedyFuse) {
+std::unique_ptr<Pass> llmhls::createCreateDataflowFromLinalgPass(bool greedyFuse) {
   return std::make_unique<CreateDataflowFromLinalg>(greedyFuse);
 }
 

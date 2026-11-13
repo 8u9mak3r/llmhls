@@ -1,6 +1,6 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
@@ -9,11 +9,11 @@
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/IR/DialectImplementation.h"
 #include "mlir/IR/IntegerSet.h"
-#include "scalehls/Dialect/HLS/Utils.h"
+#include "llmhls/Dialect/HLS/Utils.h"
 #include "llvm/ADT/TypeSwitch.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 //===----------------------------------------------------------------------===//
@@ -23,17 +23,17 @@ using namespace hls;
 void HLSDialect::initialize() {
   addTypes<
 #define GET_TYPEDEF_LIST
-#include "scalehls/Dialect/HLS/HLSTypes.cpp.inc"
+#include "llmhls/Dialect/HLS/HLSTypes.cpp.inc"
       >();
 
   addAttributes<
 #define GET_ATTRDEF_LIST
-#include "scalehls/Dialect/HLS/HLSAttributes.cpp.inc"
+#include "llmhls/Dialect/HLS/HLSAttributes.cpp.inc"
       >();
 
   addOperations<
 #define GET_OP_LIST
-#include "scalehls/Dialect/HLS/HLS.cpp.inc"
+#include "llmhls/Dialect/HLS/HLS.cpp.inc"
       >();
 }
 
@@ -1276,16 +1276,16 @@ void FuncDirectiveAttr::print(AsmPrinter &p) const {
 // Include tablegen classes
 //===----------------------------------------------------------------------===//
 
-#include "scalehls/Dialect/HLS/HLSDialect.cpp.inc"
-#include "scalehls/Dialect/HLS/HLSEnums.cpp.inc"
+#include "llmhls/Dialect/HLS/HLSDialect.cpp.inc"
+#include "llmhls/Dialect/HLS/HLSEnums.cpp.inc"
 
 #define GET_ATTRDEF_CLASSES
-#include "scalehls/Dialect/HLS/HLSAttributes.cpp.inc"
+#include "llmhls/Dialect/HLS/HLSAttributes.cpp.inc"
 
 #define GET_TYPEDEF_CLASSES
-#include "scalehls/Dialect/HLS/HLSTypes.cpp.inc"
+#include "llmhls/Dialect/HLS/HLSTypes.cpp.inc"
 
-#include "scalehls/Dialect/HLS/HLSInterfaces.cpp.inc"
+#include "llmhls/Dialect/HLS/HLSInterfaces.cpp.inc"
 
 #define GET_OP_CLASSES
-#include "scalehls/Dialect/HLS/HLS.cpp.inc"
+#include "llmhls/Dialect/HLS/HLS.cpp.inc"

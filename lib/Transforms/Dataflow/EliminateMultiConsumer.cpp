@@ -1,16 +1,16 @@
 // //===----------------------------------------------------------------------===//
 // //
-// // Copyright 2020-2021 The ScaleHLS Authors.
+// // Copyright 2020-2021 The LLMHLS Authors.
 // //
 // //===----------------------------------------------------------------------===//
 
 // #include "mlir/IR/Dominance.h"
 // #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-// #include "scalehls/Transforms/Passes.h"
-// #include "scalehls/Transforms/Utils.h"
+// #include "llmhls/Transforms/Passes.h"
+// #include "llmhls/Transforms/Utils.h"
 
 // using namespace mlir;
-// using namespace scalehls;
+// using namespace llmhls;
 // using namespace hls;
 
 // static void rebuildNodeOpRecursively(hls::NodeOp& node,
@@ -203,23 +203,23 @@
 // };
 // } // namespace
 
-// std::unique_ptr<Pass> scalehls::createEliminateMultiConsumerPass() {
+// std::unique_ptr<Pass> llmhls::createEliminateMultiConsumerPass() {
 //   return std::make_unique<EliminateMultiConsumer>();
 // }
 
 
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
@@ -287,7 +287,7 @@ struct EliminateMultiConsumer
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createEliminateMultiConsumerPass() {
+std::unique_ptr<Pass> llmhls::createEliminateMultiConsumerPass() {
   return std::make_unique<EliminateMultiConsumer>();
 }
 

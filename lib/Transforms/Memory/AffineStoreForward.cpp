@@ -1,6 +1,6 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
@@ -8,12 +8,12 @@
 #include "mlir/Dialect/Affine/Utils.h"
 #include "mlir/IR/Dominance.h"
 #include "mlir/IR/IntegerSet.h"
-#include "scalehls/Dialect/HLS/Utils.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Dialect/HLS/Utils.h"
+#include "llmhls/Transforms/Passes.h"
 #include <algorithm>
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 /// A helper to check whether an ifOp is valid to be replaced with select.
 bool isValid(AffineIfOp ifOp, Operation *targetOp) {
@@ -389,6 +389,6 @@ struct AffineStoreForward : public AffineStoreForwardBase<AffineStoreForward> {
 
 /// Creates a pass to perform optimizations relying on memref dataflow such as
 /// store to load forwarding, elimination of dead stores, and dead allocs.
-std::unique_ptr<Pass> scalehls::createAffineStoreForwardPass() {
+std::unique_ptr<Pass> llmhls::createAffineStoreForwardPass() {
   return std::make_unique<AffineStoreForward>();
 }

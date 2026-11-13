@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-collapse-memref-unit-dims %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-collapse-memref-unit-dims %s | FileCheck %s
 
 // CHECK: #set = affine_set<(d0, d1, d2, d3) : (-d2 - d3 * 16 + 63 == 0, -d0 + 2 == 0, -d1 + 2 == 0)>
 // CHECK: #set1 = affine_set<(d0, d1) : (-d0 - d1 * 16 + 63 == 0)>

@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-convert-dataflow-to-func %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-convert-dataflow-to-func %s | FileCheck %s
 
 // CHECK: #map = affine_map<() -> (4)>
 // CHECK: #map1 = affine_map<() -> (100)>

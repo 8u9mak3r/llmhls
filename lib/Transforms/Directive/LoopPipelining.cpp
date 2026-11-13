@@ -1,19 +1,19 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 /// Apply loop pipelining to the input loop, all inner loops are automatically
 /// fully unrolled.
-bool scalehls::applyLoopPipelining(AffineLoopBand &band, unsigned pipelineLoc,
+bool llmhls::applyLoopPipelining(AffineLoopBand &band, unsigned pipelineLoc,
                                    unsigned targetII) {
   auto targetLoop = band[pipelineLoc];
 
@@ -87,6 +87,6 @@ struct LoopPipelining : public LoopPipeliningBase<LoopPipelining> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createLoopPipeliningPass() {
+std::unique_ptr<Pass> llmhls::createLoopPipeliningPass() {
   return std::make_unique<LoopPipelining>();
 }

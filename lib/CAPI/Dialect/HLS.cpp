@@ -1,14 +1,14 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
-#include "scalehls-c/HLS.h"
+#include "llmhls-c/HLS.h"
 #include "mlir/CAPI/Registration.h"
-#include "scalehls/Dialect/HLS/HLS.h"
+#include "llmhls/Dialect/HLS/HLS.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(HLS, hls, hls::HLSDialect)

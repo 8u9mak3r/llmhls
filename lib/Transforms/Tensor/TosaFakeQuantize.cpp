@@ -1,13 +1,13 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Transforms/Passes.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 static Type getQuantizeType(Type type) {
   auto i8Type = IntegerType::get(type.getContext(), 8);
@@ -86,6 +86,6 @@ struct TosaFakeQuantize : public TosaFakeQuantizeBase<TosaFakeQuantize> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createTosaFakeQuantizePass() {
+std::unique_ptr<Pass> llmhls::createTosaFakeQuantizePass() {
   return std::make_unique<TosaFakeQuantize>();
 }

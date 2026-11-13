@@ -1,14 +1,14 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 namespace {
@@ -101,6 +101,6 @@ struct CreateAxiInterface : public CreateAxiInterfaceBase<CreateAxiInterface> {
 } // namespace
 
 std::unique_ptr<Pass>
-scalehls::createCreateAxiInterfacePass(std::string hlsTopFunc) {
+llmhls::createCreateAxiInterfacePass(std::string hlsTopFunc) {
   return std::make_unique<CreateAxiInterface>(hlsTopFunc);
 }

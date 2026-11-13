@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+
+LLMHLS_ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LLMHLS_COMPILER_TEMP_DIR="${LLMHLS_ROOT_DIR}/build/.tmp"
+mkdir -p "${LLMHLS_COMPILER_TEMP_DIR}"
+export TEMP="${LLMHLS_COMPILER_TEMP_DIR}"
+export TMPDIR="${LLMHLS_COMPILER_TEMP_DIR}"
+
+exec /usr/bin/clang "$@"

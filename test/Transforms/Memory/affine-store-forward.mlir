@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-affine-store-forward %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-affine-store-forward %s | FileCheck %s
 
 // CHECK: #set = affine_set<(d0) : (d0 == 0)>
 // CHECK: #set1 = affine_set<(d0, d1, d2, d3) : (-d2 - d3 * 16 + 63 == 0, -d0 + 2 == 0, -d1 + 2 == 0)>

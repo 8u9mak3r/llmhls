@@ -1,6 +1,6 @@
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 
-add_mlir_library(MLIRScaleHLSEmitHLSCpp
+add_mlir_library(MLIRLLMHLSEmitHLSCpp
   EmitHLSCpp.cpp
 
   LINK_LIBS PUBLIC

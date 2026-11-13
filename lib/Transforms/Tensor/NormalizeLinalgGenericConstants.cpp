@@ -1,6 +1,6 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
@@ -11,10 +11,10 @@
 #include "mlir/IR/BlockAndValueMapping.h"
 #include "mlir/IR/Matchers.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Transforms/Passes.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 namespace {
 
@@ -145,6 +145,6 @@ struct NormalizeLinalgGenericConstants
 
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createNormalizeLinalgGenericConstantsPass() {
+std::unique_ptr<Pass> llmhls::createNormalizeLinalgGenericConstantsPass() {
   return std::make_unique<NormalizeLinalgGenericConstants>();
 }

@@ -1,7 +1,7 @@
 # Pass Detail
 Based on `docs/ARCHITECTURE.md`, This doc will further illustrate details of several key passes. Details of other more passes will be documented here if needed.
 
-## scalehls-uplift-reshapes-between-tasks
+## llmhls-uplift-reshapes-between-tasks
 Located at Stage 2, codes can be seen in `lib/Transforms/Dataflow/UpliftReshapesBetweenTasks.cpp`.
 
 This pass is dedicated to eliminating shape conversion between HLS dataflow tasks, since it's hard and performance-unfriendly to code shape conversion in HLS C++.
@@ -73,10 +73,10 @@ Finally, by setting correct indexing maps, these conversions can be fused into a
 }
 ```
 
-## scalehls-grand-fusion
-Located at Stage 2 right after `scalehls-uplift-reshapes-between-tasks` pass. Typically during this pass, a HLS Dataflow task is centered at a matmul-like op(matmul, conv, reduction type op, etc.), where most of the computation overhead lies. Before this matmul-like op go a series of element-wise or broadcast-type ops, after it follow shape conversion ops uplifted during `scalehls-uplift-reshapes-between-tasks` pass. Within a dataflow task, they can all be fused into a `linalg.generic` op(also, can be represented as a nested loop). With this fusion at linalg level, another buggy `affine.for` level loop fusion int stage 5 can be avoided.
+## llmhls-grand-fusion
+Located at Stage 2 right after `llmhls-uplift-reshapes-between-tasks` pass. Typically during this pass, a HLS Dataflow task is centered at a matmul-like op(matmul, conv, reduction type op, etc.), where most of the computation overhead lies. Before this matmul-like op go a series of element-wise or broadcast-type ops, after it follow shape conversion ops uplifted during `llmhls-uplift-reshapes-between-tasks` pass. Within a dataflow task, they can all be fused into a `linalg.generic` op(also, can be represented as a nested loop). With this fusion at linalg level, another buggy `affine.for` level loop fusion int stage 5 can be avoided.
 
-## scalehls-legalize-dataflow
+## llmhls-legalize-dataflow
 Located at Stage 11, codes can be seen in `lib/Transforms/Dataflow/LegalizeDataflow.cpp`.
 
 A legal HLS dataflow should guarantee that there's no multi-consumer nodes in it. For HLS C++, a multi-consumer node can show up in 2 forms:
@@ -127,4 +127,4 @@ node0(x, output: w) {
     }
 }
 ```
-The `scalehls-legalize-dataflow` pass is to eliminate every multi-consumer or bypass nodes across the whole HLS workload. By the way, `scalehls-eliminate-multi-consumer` pass in Stage 10 only generates multiple copies for multi-consumer nodes instead of actually eliminating them. Furthermore, it does nothing to bypass nodes.
+The `llmhls-legalize-dataflow` pass is to eliminate every multi-consumer or bypass nodes across the whole HLS workload. By the way, `llmhls-eliminate-multi-consumer` pass in Stage 10 only generates multiple copies for multi-consumer nodes instead of actually eliminating them. Furthermore, it does nothing to bypass nodes.

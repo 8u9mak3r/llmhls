@@ -1,19 +1,19 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/IR/IntegerSet.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 /// Apply loop perfection. Try to sink all operations between loop statements
 /// into the innermost loop of the input loop band.
-bool scalehls::applyAffineLoopPerfection(AffineLoopBand &band) {
+bool llmhls::applyAffineLoopPerfection(AffineLoopBand &band) {
   assert(!band.empty() && "no loops provided");
 
   auto innermostLoop = band.back();
@@ -183,6 +183,6 @@ struct AffineLoopPerfection
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createAffineLoopPerfectionPass() {
+std::unique_ptr<Pass> llmhls::createAffineLoopPerfectionPass() {
   return std::make_unique<AffineLoopPerfection>();
 }

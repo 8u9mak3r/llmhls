@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-affine-loop-tile="tile-size=16" %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-affine-loop-tile="tile-size=16" %s | FileCheck %s
 
 // CHECK: #map = affine_map<(d0) -> (d0 * 16)>
 // CHECK: #map1 = affine_map<(d0) -> (d0 * 14)>

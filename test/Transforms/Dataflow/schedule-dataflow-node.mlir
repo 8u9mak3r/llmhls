@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-schedule-dataflow-node %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-schedule-dataflow-node %s | FileCheck %s
 
 // CHECK: #set = affine_set<(d0) : (d0 == 0)>
 // CHECK: #set1 = affine_set<(d0, d1, d2, d3) : (-d2 - d3 * 16 + 63 == 0, -d0 + 2 == 0, -d1 + 2 == 0)>

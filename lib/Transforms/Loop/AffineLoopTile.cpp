@@ -1,22 +1,22 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/Analysis/LoopAnalysis.h"
 #include "mlir/Dialect/Affine/LoopUtils.h"
 #include "mlir/Dialect/Affine/Utils.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 /// Apply loop tiling to the input loop band and sink all intra-tile loops to
 /// the innermost loop with the original loop order.
-bool scalehls::applyLoopTiling(AffineLoopBand &band, FactorList tileList,
+bool llmhls::applyLoopTiling(AffineLoopBand &band, FactorList tileList,
                                bool loopNormalize, bool annotatePointLoop) {
   assert(!band.empty() && "no loops provided");
   if (!isPerfectlyNested(band))
@@ -88,7 +88,7 @@ bool scalehls::applyLoopTiling(AffineLoopBand &band, FactorList tileList,
 
 /// Reduces each tile size to the largest divisor of the corresponding trip
 /// count (if the trip count is known).
-void scalehls::adjustToDivisorsOfTripCounts(
+void llmhls::adjustToDivisorsOfTripCounts(
     ArrayRef<AffineForOp> band, SmallVectorImpl<unsigned> *tileSizes) {
   assert(band.size() == tileSizes->size() && "invalid tile size count");
   for (unsigned i = 0, e = band.size(); i < e; i++) {
@@ -137,6 +137,6 @@ struct AffineLoopTile : public AffineLoopTileBase<AffineLoopTile> {
 /// Creates a pass to perform loop tiling on all suitable loop nests of a
 /// Function.
 std::unique_ptr<Pass>
-scalehls::createAffineLoopTilePass(unsigned loopTileSize) {
+llmhls::createAffineLoopTilePass(unsigned loopTileSize) {
   return std::make_unique<AffineLoopTile>(loopTileSize);
 }

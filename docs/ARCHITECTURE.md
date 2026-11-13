@@ -86,7 +86,7 @@ Codegen of high-performance HLS C++ code.
 
 ## IR Examples
 
-Can be seen in `samples/pytorch/llms/bert/debug-w8only`, under this path lies IR files named as `debugpoint-x.mlir`(x ranges from 0 to 13) and a `directive-level.mlir`, which is the output of the last compiler stage. To inspect the lowering and optimization effects on IR of a certain compiler stage or several contiguous stages, you can run them by setting `start-point` and `debug-point` opts in shell cmds. For example, cmd `scalehls-opt debug-w8only/debugpoint-1.mlir -scaleflow-pytorch-pipeline="top-func=forward start-point=2 debug-point=10" > debug-w8only/hls-1.mlir 2> debug-w8only/dbg.log` will perform compiler stage 2~10 on the specified IR, and dump the generated IR in `debug-w8only/hls-1.mlir` and/or errors in `debug-w8only/dbg.log`.
+Can be seen in `samples/pytorch/llms/bert/debug-w8only`, under this path lies IR files named as `debugpoint-x.mlir`(x ranges from 0 to 13) and a `directive-level.mlir`, which is the output of the last compiler stage. To inspect the lowering and optimization effects on IR of a certain compiler stage or several contiguous stages, you can run them by setting `start-point` and `debug-point` opts in shell cmds. For example, cmd `llmhls-opt debug-w8only/debugpoint-1.mlir -scaleflow-pytorch-pipeline="top-func=forward start-point=2 debug-point=10" > debug-w8only/hls-1.mlir 2> debug-w8only/dbg.log` will perform compiler stage 2~10 on the specified IR, and dump the generated IR in `debug-w8only/hls-1.mlir` and/or errors in `debug-w8only/dbg.log`.
 
 
 

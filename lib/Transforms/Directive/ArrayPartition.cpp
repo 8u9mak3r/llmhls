@@ -1,15 +1,15 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "llvm/Support/Debug.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 static void updateSubFuncs(func::FuncOp func, Builder builder) {
@@ -43,7 +43,7 @@ static void updateSubFuncs(func::FuncOp func, Builder builder) {
 }
 
 /// Apply the specified array partition factors and kinds.
-bool scalehls::applyArrayPartition(Value array, ArrayRef<unsigned> factors,
+bool llmhls::applyArrayPartition(Value array, ArrayRef<unsigned> factors,
                                    ArrayRef<hls::PartitionKind> kinds,
                                    bool updateFuncSignature) {
   auto builder = Builder(array.getContext());
@@ -352,7 +352,7 @@ getArrayPartition (Value buffer) {
 
 /// Find the suitable array partition factors and kinds for all arrays in the
 /// targeted function.
-bool scalehls::applyAutoArrayPartition(func::FuncOp func) {
+bool llmhls::applyAutoArrayPartition(func::FuncOp func) {
   func.walk([&](hls::BufferOp buffer){
     auto partition = getArrayPartition(buffer);
     auto kinds = partition.first;
@@ -405,6 +405,6 @@ struct ArrayPartition : public ArrayPartitionBase<ArrayPartition> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createArrayPartitionPass() {
+std::unique_ptr<Pass> llmhls::createArrayPartitionPass() {
   return std::make_unique<ArrayPartition>();
 }

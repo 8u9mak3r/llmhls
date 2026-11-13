@@ -1,14 +1,14 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Transforms/Passes.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 namespace {
 template <typename FloatOpType, typename IntOpType>
@@ -192,6 +192,6 @@ struct LinalgFakeQuantize : public LinalgFakeQuantizeBase<LinalgFakeQuantize> {
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createLinalgFakeQuantizePass() {
+std::unique_ptr<Pass> llmhls::createLinalgFakeQuantizePass() {
   return std::make_unique<LinalgFakeQuantize>();
 }

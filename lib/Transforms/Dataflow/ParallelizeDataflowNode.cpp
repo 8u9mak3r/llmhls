@@ -1,21 +1,21 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Dialect/Affine/Analysis/LoopAnalysis.h"
 #include "mlir/Dialect/Affine/LoopUtils.h"
 #include "mlir/Dialect/Affine/Utils.h"
-#include "scalehls/Dialect/HLS/Analysis.h"
-#include "scalehls/Transforms/Passes.h"
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Dialect/HLS/Analysis.h"
+#include "llmhls/Transforms/Passes.h"
+#include "llmhls/Transforms/Utils.h"
 #include "llvm/Support/Debug.h"
 
 #define DEBUG_TYPE "parallelize-dataflow-node"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 // /// Apply loop vectorization to the loop band.
 // static bool applyLoopVectorization(AffineLoopBand &band,
@@ -253,7 +253,7 @@ private:
 };
 } // namespace
 
-std::unique_ptr<Pass> scalehls::createParallelizeDataflowNodePass(
+std::unique_ptr<Pass> llmhls::createParallelizeDataflowNodePass(
     unsigned loopUnrollFactor, bool unrollPointLoopOnly, bool complexityAware,
     bool correlationAware) {
   return std::make_unique<ParallelizeDataflowNode>(

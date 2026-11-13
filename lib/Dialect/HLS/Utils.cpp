@@ -1,10 +1,10 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
-#include "scalehls/Dialect/HLS/Utils.h"
+#include "llmhls/Dialect/HLS/Utils.h"
 #include "mlir/Dialect/Affine/Analysis/AffineAnalysis.h"
 #include "mlir/Dialect/Affine/Analysis/LoopAnalysis.h"
 #include "mlir/Dialect/Affine/Analysis/Utils.h"
@@ -16,7 +16,7 @@
 #include "mlir/IR/IntegerSet.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 //===----------------------------------------------------------------------===//
@@ -24,21 +24,21 @@ using namespace hls;
 //===----------------------------------------------------------------------===//
 
 /// Get the root affine loop contained by the node.
-AffineForOp scalehls::getNodeRootLoop(NodeOp currentNode) {
+AffineForOp llmhls::getNodeRootLoop(NodeOp currentNode) {
   assert(llvm::hasSingleElement(currentNode.getOps<AffineForOp>()) &&
          "node must only contain one loop band");
   return *currentNode.getOps<AffineForOp>().begin();
 }
 
 /// Get the affine loop band contained by the node.
-AffineLoopBand scalehls::getNodeLoopBand(NodeOp currentNode) {
+AffineLoopBand llmhls::getNodeLoopBand(NodeOp currentNode) {
   AffineLoopBand band;
   getLoopBandFromOutermost(getNodeRootLoop(currentNode), band);
   return band;
 }
 
 /// Wrap the operations in the block with dispatch op.
-DispatchOp scalehls::dispatchBlock(Block *block) {
+DispatchOp llmhls::dispatchBlock(Block *block) {
   if (!block->getOps<DispatchOp>().empty() ||
       !isa<func::FuncOp, mlir::AffineForOp>(block->getParentOp()))
     return DispatchOp();
@@ -64,7 +64,7 @@ DispatchOp scalehls::dispatchBlock(Block *block) {
 /// before the first operation or last operation and each operation will be
 /// inserted in order. This method always succeeds even if the resulting IR is
 /// invalid.
-TaskOp scalehls::fuseOpsIntoTask(ArrayRef<Operation *> ops,
+TaskOp llmhls::fuseOpsIntoTask(ArrayRef<Operation *> ops,
                                  PatternRewriter &rewriter,
                                  bool insertToLastOp) {
   assert(!ops.empty() && "must fuse at least one op");
@@ -120,7 +120,7 @@ TaskOp scalehls::fuseOpsIntoTask(ArrayRef<Operation *> ops,
 
 
 /// Fuse multiple nodes into a new node.
-NodeOp scalehls::fuseNodeOps(ArrayRef<NodeOp> nodes,
+NodeOp llmhls::fuseNodeOps(ArrayRef<NodeOp> nodes,
                              PatternRewriter &rewriter) {
   assert((nodes.size() > 1) && "must fuse at least two nodes");
 
@@ -179,7 +179,7 @@ NodeOp scalehls::fuseNodeOps(ArrayRef<NodeOp> nodes,
 }
 
 // /// Fuse multiple nodes into a new node.
-// NodeOp scalehls::fuseNodeOps(ArrayRef<NodeOp> nodes,
+// NodeOp llmhls::fuseNodeOps(ArrayRef<NodeOp> nodes,
 //                              PatternRewriter &rewriter) {
 //   assert((nodes.size() > 1) && "must fuse at least two nodes");
 
@@ -274,19 +274,19 @@ static auto getUsersExcept(Value buffer, OperandKind kind, NodeOp except) {
 }
 
 /// Get the consumer/producer nodes of the given buffer expect the given op.
-SmallVector<NodeOp> scalehls::getConsumersExcept(Value buffer, NodeOp except) {
+SmallVector<NodeOp> llmhls::getConsumersExcept(Value buffer, NodeOp except) {
   return getUsersExcept(buffer, OperandKind::INPUT, except);
 }
-SmallVector<NodeOp> scalehls::getProducersExcept(Value buffer, NodeOp except) {
+SmallVector<NodeOp> llmhls::getProducersExcept(Value buffer, NodeOp except) {
   return getUsersExcept(buffer, OperandKind::OUTPUT, except);
 }
-SmallVector<NodeOp> scalehls::getConsumers(Value buffer) {
+SmallVector<NodeOp> llmhls::getConsumers(Value buffer) {
   return getConsumersExcept(buffer, NodeOp());
 }
-SmallVector<NodeOp> scalehls::getProducers(Value buffer) {
+SmallVector<NodeOp> llmhls::getProducers(Value buffer) {
   return getProducersExcept(buffer, NodeOp());
 }
-SmallVector<NodeOp> scalehls::getDependentConsumers(Value buffer, NodeOp node) {
+SmallVector<NodeOp> llmhls::getDependentConsumers(Value buffer, NodeOp node) {
   // If the buffer is defined outside of a dependence free schedule op, we can
   // ignore back dependences.
   bool ignoreBackDependence =
@@ -301,7 +301,7 @@ SmallVector<NodeOp> scalehls::getDependentConsumers(Value buffer, NodeOp node) {
 }
 
 /// Find buffer value or buffer op across the dataflow hierarchy.
-Value scalehls::findBuffer(Value memref) {
+Value llmhls::findBuffer(Value memref) {
   if (auto arg = memref.dyn_cast<BlockArgument>()) {
     if (auto node = dyn_cast<NodeOp>(arg.getParentBlock()->getParentOp()))
       return findBuffer(node->getOperand(arg.getArgNumber()));
@@ -315,7 +315,7 @@ Value scalehls::findBuffer(Value memref) {
     return buffer.getMemref();
   return Value();
 }
-hls::BufferLikeInterface scalehls::findBufferOp(Value memref) {
+hls::BufferLikeInterface llmhls::findBufferOp(Value memref) {
   if (auto buffer = findBuffer(memref))
     return buffer.getDefiningOp<hls::BufferLikeInterface>();
   return hls::BufferLikeInterface();
@@ -324,7 +324,7 @@ hls::BufferLikeInterface scalehls::findBufferOp(Value memref) {
 /// Get the depth of a buffer or stream channel. Note that only if the defining
 /// operation of the buffer is not a BufferOp or stream types, the returned
 /// result will be 1.
-unsigned scalehls::getBufferDepth(Value memref) {
+unsigned llmhls::getBufferDepth(Value memref) {
   if (auto streamType = memref.getType().dyn_cast<StreamType>()) {
     return streamType.getDepth();
   } else if (auto bufferOp = findBufferOp(memref))
@@ -332,14 +332,14 @@ unsigned scalehls::getBufferDepth(Value memref) {
   return 1;
 }
 
-bool scalehls::isExternalBuffer(Value memref) {
+bool llmhls::isExternalBuffer(Value memref) {
   if (auto type = memref.getType().dyn_cast<MemRefType>())
     return isDram(MemoryKind(type.getMemorySpaceAsInt()));
   return false;
 }
 
 /// Check whether the given use has read/write semantics.
-bool scalehls::isRead(OpOperand &use) {
+bool llmhls::isRead(OpOperand &use) {
   // For NodeOp and ScheduleOp, we don't rely on memory effect interface.
   // Instead, we delve into its region to figure out the effect.
   if (auto node = dyn_cast<NodeOp>(use.getOwner()))
@@ -356,7 +356,7 @@ bool scalehls::isRead(OpOperand &use) {
   return hasEffect<MemoryEffects::Read>(use.getOwner(), use.get()) ||
          isa<StreamReadOp>(use.getOwner());
 }
-bool scalehls::isWritten(OpOperand &use) {
+bool llmhls::isWritten(OpOperand &use) {
   // For ScheduleOp, we don't rely on memory effect interface. Instead, we delve
   // into its region to figure out the effect. However, for NodeOp, we don't
   // need this recursive approach any more.
@@ -377,7 +377,7 @@ bool scalehls::isWritten(OpOperand &use) {
 // Linalg analysis utils
 //===----------------------------------------------------------------------===//
 
-bool scalehls::isElementwiseGenericOp(linalg::GenericOp op) {
+bool llmhls::isElementwiseGenericOp(linalg::GenericOp op) {
   // All loops must be parallel loop.
   if (op.getNumParallelLoops() != op.getNumLoops())
     return false;
@@ -406,7 +406,7 @@ bool scalehls::isElementwiseGenericOp(linalg::GenericOp op) {
   return true;
 }
 
-bool scalehls::isReductionTypeGenericOp(mlir::Operation* op) {
+bool llmhls::isReductionTypeGenericOp(mlir::Operation* op) {
   bool reductionType = false;
   if (auto castOp = dyn_cast<linalg::GenericOp>(op)) {
     auto iteratorTypes = castOp.getIteratorTypes();
@@ -422,7 +422,7 @@ bool scalehls::isReductionTypeGenericOp(mlir::Operation* op) {
   return reductionType;
 }
 
-bool scalehls::isReshaped(RankedTensorType& st0, RankedTensorType& st1) {
+bool llmhls::isReshaped(RankedTensorType& st0, RankedTensorType& st1) {
   auto s0 = st0.getShape();
   auto s1 = st1.getShape();
 
@@ -450,7 +450,7 @@ bool scalehls::isReshaped(RankedTensorType& st0, RankedTensorType& st1) {
 }
 
 
-Optional<SmallVector<int64_t>> scalehls::computePermutation(RankedTensorType src, RankedTensorType dst) {
+Optional<SmallVector<int64_t>> llmhls::computePermutation(RankedTensorType src, RankedTensorType dst) {
   auto srcShape = src.getShape();
   auto dstShape = dst.getShape();
   if (src.getRank() != dst.getRank()) return llvm::None;
@@ -475,7 +475,7 @@ Optional<SmallVector<int64_t>> scalehls::computePermutation(RankedTensorType src
 //===----------------------------------------------------------------------===//
 
 /// The current op or contained ops have effect on external buffers.
-bool scalehls::hasEffectOnExternalBuffer(Operation *op) {
+bool llmhls::hasEffectOnExternalBuffer(Operation *op) {
   auto result = op->walk([](MemoryEffectOpInterface effectOp) {
     SmallVector<MemoryEffects::EffectInstance> effects;
     effectOp.getEffects(effects);
@@ -489,7 +489,7 @@ bool scalehls::hasEffectOnExternalBuffer(Operation *op) {
 
 /// Distribute the given factor from the innermost loop of the given loop band,
 /// so that we can apply vectorize, unroll and jam, etc.
-FactorList scalehls::getDistributedFactors(
+FactorList llmhls::getDistributedFactors(
     unsigned factor, const SmallVectorImpl<mlir::AffineForOp> &band) {
   FactorList factors;
   unsigned remainFactor = factor;
@@ -519,7 +519,7 @@ FactorList scalehls::getDistributedFactors(
 
 /// Distribute the given factor evenly on all loop levels, this method can fail
 /// due to non-constant loop bounds.
-LogicalResult scalehls::getEvenlyDistributedFactors(
+LogicalResult llmhls::getEvenlyDistributedFactors(
     unsigned factor, FactorList &factors,
     const SmallVectorImpl<mlir::AffineForOp> &band) {
   // If we cannot figure out the trip count of the any loop of the loop
@@ -589,7 +589,7 @@ LogicalResult scalehls::getEvenlyDistributedFactors(
 
 /// Return a pair which indicates whether the if statement is always true or
 /// false, respectively. The returned result is one-hot.
-std::pair<bool, bool> scalehls::ifAlwaysTrueOrFalse(mlir::AffineIfOp ifOp) {
+std::pair<bool, bool> llmhls::ifAlwaysTrueOrFalse(mlir::AffineIfOp ifOp) {
   auto set = ifOp.getIntegerSet();
   auto operands = SmallVector<Value, 4>(ifOp.getOperands().begin(),
                                         ifOp.getOperands().end());
@@ -654,7 +654,7 @@ std::pair<bool, bool> scalehls::ifAlwaysTrueOrFalse(mlir::AffineIfOp ifOp) {
 }
 
 /// Check whether the two given if statements have the same condition.
-bool scalehls::checkSameIfStatement(AffineIfOp lhsOp, AffineIfOp rhsOp) {
+bool llmhls::checkSameIfStatement(AffineIfOp lhsOp, AffineIfOp rhsOp) {
   if (lhsOp == nullptr || rhsOp == nullptr)
     return false;
 
@@ -671,7 +671,7 @@ bool scalehls::checkSameIfStatement(AffineIfOp lhsOp, AffineIfOp rhsOp) {
 }
 
 /// Parse array attributes.
-SmallVector<int64_t, 8> scalehls::getIntArrayAttrValue(Operation *op,
+SmallVector<int64_t, 8> llmhls::getIntArrayAttrValue(Operation *op,
                                                        StringRef name) {
   SmallVector<int64_t, 8> array;
   if (auto arrayAttr = op->getAttrOfType<ArrayAttr>(name)) {
@@ -686,7 +686,7 @@ SmallVector<int64_t, 8> scalehls::getIntArrayAttrValue(Operation *op,
 }
 
 /// Collect all load and store operations in the block and return them in "map".
-void scalehls::getMemAccessesMap(Block &block, MemAccessesMap &map,
+void llmhls::getMemAccessesMap(Block &block, MemAccessesMap &map,
                                  bool includeVectorTransfer) {
   for (auto &op : block) {
     if (auto load = dyn_cast<AffineReadOpInterface>(op))
@@ -712,7 +712,7 @@ void scalehls::getMemAccessesMap(Block &block, MemAccessesMap &map,
   }
 }
 
-bool scalehls::crossRegionDominates(Operation *a, Operation *b) {
+bool llmhls::crossRegionDominates(Operation *a, Operation *b) {
   if (a == b)
     return true;
   if (b->isAncestor(a))
@@ -727,7 +727,7 @@ bool scalehls::crossRegionDominates(Operation *a, Operation *b) {
 // ancestors that are located at the same block. Note that in this check,
 // AffineIfOp is transparent.
 Optional<std::pair<Operation *, Operation *>>
-scalehls::checkSameLevel(Operation *lhsOp, Operation *rhsOp) {
+llmhls::checkSameLevel(Operation *lhsOp, Operation *rhsOp) {
   // If lhsOp and rhsOp are already at the same level, return true.
   if (lhsOp->getBlock() == rhsOp->getBlock())
     return std::pair<Operation *, Operation *>(lhsOp, rhsOp);
@@ -765,7 +765,7 @@ scalehls::checkSameLevel(Operation *lhsOp, Operation *rhsOp) {
 
 /// Returns the number of surrounding loops common to 'loopsA' and 'loopsB',
 /// where each lists loops from outer-most to inner-most in loop nest.
-unsigned scalehls::getCommonSurroundingLoops(Operation *A, Operation *B,
+unsigned llmhls::getCommonSurroundingLoops(Operation *A, Operation *B,
                                              AffineLoopBand *band) {
   SmallVector<AffineForOp, 4> loopsA, loopsB;
   getLoopIVs(*A, &loopsA);
@@ -785,7 +785,7 @@ unsigned scalehls::getCommonSurroundingLoops(Operation *A, Operation *B,
 
 /// Calculate the lower and upper bound of the affine map if possible.
 Optional<std::pair<int64_t, int64_t>>
-scalehls::getBoundOfAffineMap(AffineMap map, ValueRange operands) {
+llmhls::getBoundOfAffineMap(AffineMap map, ValueRange operands) {
   if (map.isSingleConstant()) {
     auto constBound = map.getSingleConstantResult();
     return std::pair<int64_t, int64_t>(constBound, constBound);
@@ -841,7 +841,7 @@ scalehls::getBoundOfAffineMap(AffineMap map, ValueRange operands) {
   return std::pair<int64_t, int64_t>(*minmax.first, *minmax.second);
 }
 
-bool scalehls::isFullyPartitioned(MemRefType memrefType) {
+bool llmhls::isFullyPartitioned(MemRefType memrefType) {
   if (memrefType.getRank() == 0)
     return true;
 
@@ -859,7 +859,7 @@ bool scalehls::isFullyPartitioned(MemRefType memrefType) {
 // Calculate partition factors through analyzing the "memrefType" and return
 // them in "factors". Meanwhile, the overall partition number is calculated and
 // returned as well.
-int64_t scalehls::getPartitionFactors(MemRefType memrefType,
+int64_t llmhls::getPartitionFactors(MemRefType memrefType,
                                       SmallVector<int64_t, 8> *factors) {
   auto shape = memrefType.getShape();
   auto layoutMap = memrefType.getLayout().getAffineMap();
@@ -887,7 +887,7 @@ int64_t scalehls::getPartitionFactors(MemRefType memrefType,
 
 /// This is method for finding the number of child loops which immediatedly
 /// contained by the input operation.
-unsigned scalehls::getChildLoopNum(Operation *op) {
+unsigned llmhls::getChildLoopNum(Operation *op) {
   unsigned childNum = 0;
   for (auto &region : op->getRegions())
     for (auto &block : region)
@@ -900,7 +900,7 @@ unsigned scalehls::getChildLoopNum(Operation *op) {
 
 /// Given a tiled loop band, return true and get the tile (tile-space) loop band
 /// and the point (intra-tile) loop band. If failed, return false.
-bool scalehls::getTileAndPointLoopBand(const AffineLoopBand &band,
+bool llmhls::getTileAndPointLoopBand(const AffineLoopBand &band,
                                        AffineLoopBand &tileBand,
                                        AffineLoopBand &pointBand) {
   tileBand.clear();
@@ -929,7 +929,7 @@ bool scalehls::getTileAndPointLoopBand(const AffineLoopBand &band,
 
 /// Given a loop band, return true and get the parallel loop band outsides and
 /// the reduction loop band inside. If failed, return false.
-bool scalehls::getParallelAndReductionLoopBand(const AffineLoopBand &band,
+bool llmhls::getParallelAndReductionLoopBand(const AffineLoopBand &band,
                                                AffineLoopBand &parallelBand,
                                                AffineLoopBand &reductionBand) {
   parallelBand.clear();
@@ -960,7 +960,7 @@ bool scalehls::getParallelAndReductionLoopBand(const AffineLoopBand &band,
 
 /// Get the whole loop band given the outermost loop and return it in "band".
 /// Meanwhile, the return value is the innermost loop of this loop band.
-AffineForOp scalehls::getLoopBandFromOutermost(AffineForOp forOp,
+AffineForOp llmhls::getLoopBandFromOutermost(AffineForOp forOp,
                                                AffineLoopBand &band) {
   band.clear();
   auto currentLoop = forOp;
@@ -974,7 +974,7 @@ AffineForOp scalehls::getLoopBandFromOutermost(AffineForOp forOp,
   }
   return band.back();
 }
-AffineForOp scalehls::getLoopBandFromInnermost(AffineForOp forOp,
+AffineForOp llmhls::getLoopBandFromInnermost(AffineForOp forOp,
                                                AffineLoopBand &band) {
   band.clear();
   AffineLoopBand reverseBand;
@@ -1001,7 +1001,7 @@ AffineForOp scalehls::getLoopBandFromInnermost(AffineForOp forOp,
 /// "allowHavingChilds" is true, loop bands containing more than 1 other loop
 /// bands are also collected. Otherwise, only loop bands that contains no child
 /// loops are collected.
-void scalehls::getLoopBands(Block &block, AffineLoopBands &bands,
+void llmhls::getLoopBands(Block &block, AffineLoopBands &bands,
                             bool allowHavingChilds) {
   bands.clear();
   block.walk([&](AffineForOp loop) {
@@ -1015,7 +1015,7 @@ void scalehls::getLoopBands(Block &block, AffineLoopBands &bands,
   });
 }
 
-void scalehls::getArrays(Block &block, SmallVectorImpl<Value> &arrays,
+void llmhls::getArrays(Block &block, SmallVectorImpl<Value> &arrays,
                          bool allowArguments) {
   // Collect argument arrays.
   if (allowArguments)
@@ -1031,7 +1031,7 @@ void scalehls::getArrays(Block &block, SmallVectorImpl<Value> &arrays,
   }
 }
 
-Optional<unsigned> scalehls::getAverageTripCount(AffineForOp forOp) {
+Optional<unsigned> llmhls::getAverageTripCount(AffineForOp forOp) {
   if (auto optionalTripCount = getConstantTripCount(forOp))
     return optionalTripCount.value();
   else {
@@ -1054,7 +1054,7 @@ Optional<unsigned> scalehls::getAverageTripCount(AffineForOp forOp) {
   }
 }
 
-bool scalehls::checkDependence(Operation *A, Operation *B) {
+bool llmhls::checkDependence(Operation *A, Operation *B) {
   AffineLoopBand commonLoops;
   unsigned numCommonLoops = getCommonSurroundingLoops(A, B, &commonLoops);
 
@@ -1075,7 +1075,7 @@ bool scalehls::checkDependence(Operation *A, Operation *B) {
   return false;
 }
 
-func::FuncOp scalehls::getTopFunc(ModuleOp module, std::string topFuncName) {
+func::FuncOp llmhls::getTopFunc(ModuleOp module, std::string topFuncName) {
   func::FuncOp topFunc;
   for (auto func : module.getOps<func::FuncOp>())
     if (hasTopFuncAttr(func) || func.getName() == topFuncName) {
@@ -1087,7 +1087,7 @@ func::FuncOp scalehls::getTopFunc(ModuleOp module, std::string topFuncName) {
   return topFunc;
 }
 
-func::FuncOp scalehls::getRuntimeFunc(ModuleOp module,
+func::FuncOp llmhls::getRuntimeFunc(ModuleOp module,
                                       std::string runtimeFuncName) {
   func::FuncOp runtimeFunc;
   for (auto func : module.getOps<func::FuncOp>())

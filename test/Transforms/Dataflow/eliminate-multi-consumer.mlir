@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-eliminate-multi-consumer %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-eliminate-multi-consumer %s | FileCheck %s
 // XFAIL: *
 
 // CHECK: #set = affine_set<(d0) : (d0 == 0)>

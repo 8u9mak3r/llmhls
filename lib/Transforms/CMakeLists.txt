@@ -1,4 +1,4 @@
-add_mlir_library(MLIRScaleHLSTransforms
+add_mlir_library(MLIRLLMHLSTransforms
   Dataflow/BalanceDataflowNode.cpp
   Dataflow/BufferDuplicate.cpp
   Dataflow/BufferizeDataflow.cpp
@@ -58,7 +58,7 @@ add_mlir_library(MLIRScaleHLSTransforms
   Utils.cpp
 
   DEPENDS
-  MLIRScaleHLSTransformsIncGen
+  MLIRLLMHLSTransformsIncGen
 
   LINK_LIBS PUBLIC
   MLIRHLS

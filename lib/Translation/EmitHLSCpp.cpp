@@ -1,16 +1,16 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
-#include "scalehls/Translation/EmitHLSCpp.h"
+#include "llmhls/Translation/EmitHLSCpp.h"
 #include "mlir/Analysis/CallGraph.h"
 #include "mlir/IR/AffineExprVisitor.h"
 #include "mlir/IR/IntegerSet.h"
 #include "mlir/Tools/mlir-translate/Translation.h"
-#include "scalehls/Dialect/HLS/Utils.h"
-#include "scalehls/Dialect/HLS/Visitor.h"
+#include "llmhls/Dialect/HLS/Utils.h"
+#include "llmhls/Dialect/HLS/Visitor.h"
 #include "llvm/ADT/PostOrderIterator.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
@@ -19,7 +19,7 @@
 #include <functional>
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 
 static llvm::cl::opt<bool> emitVitisDirectives("emit-vitis-directives",
                                                llvm::cl::init(true));
@@ -99,9 +99,9 @@ static SmallString<16> getTypeName(Value val) {
 namespace {
 /// This class maintains the mutable state that cross-cuts and is shared by the
 /// various emitters.
-class ScaleHLSEmitterState {
+class LLMHLSEmitterState {
 public:
-  explicit ScaleHLSEmitterState(raw_ostream &os) : os(os) {}
+  explicit LLMHLSEmitterState(raw_ostream &os) : os(os) {}
 
   // The stream to emit to.
   raw_ostream &os;
@@ -113,16 +113,16 @@ public:
   DenseMap<Value, SmallString<8>> nameTable;
 
 private:
-  ScaleHLSEmitterState(const ScaleHLSEmitterState &) = delete;
-  void operator=(const ScaleHLSEmitterState &) = delete;
+  LLMHLSEmitterState(const LLMHLSEmitterState &) = delete;
+  void operator=(const LLMHLSEmitterState &) = delete;
 };
 } // namespace
 
 namespace {
 /// This is the base class for all of the HLSCpp Emitter components.
-class ScaleHLSEmitterBase {
+class LLMHLSEmitterBase {
 public:
-  explicit ScaleHLSEmitterBase(ScaleHLSEmitterState &state)
+  explicit LLMHLSEmitterBase(LLMHLSEmitterState &state)
       : state(state), os(state.os) {}
 
   InFlightDiagnostic emitError(Operation *op, const Twine &message) {
@@ -136,7 +136,7 @@ public:
   void reduceIndent() { state.currentIndent -= 2; }
 
   // All of the mutable state we are maintaining.
-  ScaleHLSEmitterState &state;
+  LLMHLSEmitterState &state;
 
   // The stream to emit to.
   raw_ostream &os;
@@ -156,13 +156,13 @@ public:
   }
 
 private:
-  ScaleHLSEmitterBase(const ScaleHLSEmitterBase &) = delete;
-  void operator=(const ScaleHLSEmitterBase &) = delete;
+  LLMHLSEmitterBase(const LLMHLSEmitterBase &) = delete;
+  void operator=(const LLMHLSEmitterBase &) = delete;
 };
 } // namespace
 
 // TODO: update naming rule.
-SmallString<8> ScaleHLSEmitterBase::addName(Value val, bool isPtr) {
+SmallString<8> LLMHLSEmitterBase::addName(Value val, bool isPtr) {
   assert(!isDeclared(val) && "has been declared before.");
 
   SmallString<8> valName;
@@ -175,7 +175,7 @@ SmallString<8> ScaleHLSEmitterBase::addName(Value val, bool isPtr) {
   return valName;
 }
 
-SmallString<8> ScaleHLSEmitterBase::addAlias(Value val, Value alias) {
+SmallString<8> LLMHLSEmitterBase::addAlias(Value val, Value alias) {
   assert(!isDeclared(alias) && "has been declared before.");
   assert(isDeclared(val) && "hasn't been declared before.");
 
@@ -241,7 +241,7 @@ static SmallString<8> getConstantString(Type type, Attribute attr) {
   return string;
 }
 
-SmallString<8> ScaleHLSEmitterBase::getName(Value val) {
+SmallString<8> LLMHLSEmitterBase::getName(Value val) {
   // For constant scalar operations, the constant number will be returned rather
   // than the value name.
   if (auto constOp = val.getDefiningOp<arith::ConstantOp>())
@@ -259,11 +259,11 @@ SmallString<8> ScaleHLSEmitterBase::getName(Value val) {
 //===----------------------------------------------------------------------===//
 
 namespace {
-class ModuleEmitter : public ScaleHLSEmitterBase {
+class ModuleEmitter : public LLMHLSEmitterBase {
 public:
   using operand_range = Operation::operand_range;
-  explicit ModuleEmitter(ScaleHLSEmitterState &state)
-      : ScaleHLSEmitterBase(state) {}
+  explicit ModuleEmitter(LLMHLSEmitterState &state)
+      : LLMHLSEmitterBase(state) {}
 
   /// HLS dialect operation emitters.
   void emitConstBuffer(ConstBufferOp op);
@@ -353,13 +353,13 @@ private:
 //===----------------------------------------------------------------------===//
 
 namespace {
-class AffineExprEmitter : public ScaleHLSEmitterBase,
+class AffineExprEmitter : public LLMHLSEmitterBase,
                           public AffineExprVisitor<AffineExprEmitter> {
 public:
   using operand_range = Operation::operand_range;
-  explicit AffineExprEmitter(ScaleHLSEmitterState &state, unsigned numDim,
+  explicit AffineExprEmitter(LLMHLSEmitterState &state, unsigned numDim,
                              operand_range operands)
-      : ScaleHLSEmitterBase(state), numDim(numDim), operands(operands) {}
+      : LLMHLSEmitterBase(state), numDim(numDim), operands(operands) {}
 
   void visitAddExpr(AffineBinaryOpExpr expr) { emitAffineBinary(expr, "+"); }
   void visitMulExpr(AffineBinaryOpExpr expr) { emitAffineBinary(expr, "*"); }
@@ -2338,7 +2338,7 @@ LogicalResult ModuleEmitter::emitSplitModule(ModuleOp module,
       return failure();
     }
 
-    ScaleHLSEmitterState fileState(file);
+    LLMHLSEmitterState fileState(file);
     ModuleEmitter fileEmitter(fileState);
     emitBody(fileEmitter);
     file.flush();
@@ -2478,11 +2478,11 @@ LogicalResult ModuleEmitter::emitSplitModule(ModuleOp module,
 }
 
 //===----------------------------------------------------------------------===//
-// Entry of scalehls-translate
+// Entry of llmhls-translate
 //===----------------------------------------------------------------------===//
 
-LogicalResult scalehls::emitHLSCpp(ModuleOp module, llvm::raw_ostream &os) {
-  ScaleHLSEmitterState state(os);
+LogicalResult llmhls::emitHLSCpp(ModuleOp module, llvm::raw_ostream &os) {
+  LLMHLSEmitterState state(os);
   ModuleEmitter emitter(state);
   if (!hlsCppOutputDir.empty())
     return emitter.emitSplitModule(module, hlsCppOutputDir);
@@ -2490,10 +2490,10 @@ LogicalResult scalehls::emitHLSCpp(ModuleOp module, llvm::raw_ostream &os) {
   return failure(state.encounteredError);
 }
 
-void scalehls::registerEmitHLSCppTranslation() {
+void llmhls::registerEmitHLSCppTranslation() {
   static TranslateFromMLIRRegistration toHLSCpp(
-      "scalehls-emit-hlscpp", "Translate MLIR into synthesizable C++",
+      "llmhls-emit-hlscpp", "Translate MLIR into synthesizable C++",
       emitHLSCpp, [&](DialectRegistry &registry) {
-        scalehls::registerAllDialects(registry);
+        llmhls::registerAllDialects(registry);
       });
 }

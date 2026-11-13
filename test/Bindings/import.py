@@ -3,5 +3,5 @@
 
 import mlir.ir
 from mlir.dialects import builtin
-import scalehls
-from scalehls.dialects import hls
+import llmhls
+from llmhls.dialects import hls

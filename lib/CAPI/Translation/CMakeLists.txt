@@ -1,4 +1,4 @@
-add_mlir_public_c_api_library(MLIRScaleHLSCAPIEmitHLSCpp
+add_mlir_public_c_api_library(MLIRLLMHLSCAPIEmitHLSCpp
   EmitHLSCpp.cpp
 
   ADDITIONAL_HEADER_DIRS
@@ -6,5 +6,5 @@ add_mlir_public_c_api_library(MLIRScaleHLSCAPIEmitHLSCpp
 
   LINK_LIBS PUBLIC
   MLIRCAPIIR
-  MLIRScaleHLSEmitHLSCpp
+  MLIRLLMHLSEmitHLSCpp
   )

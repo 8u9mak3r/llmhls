@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-create-local-buffer %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-create-local-buffer %s | FileCheck %s
 
 // CHECK: #map = affine_map<(d0) -> (d0 * 16)>
 // CHECK: #map1 = affine_map<(d0) -> (d0 * 14)>

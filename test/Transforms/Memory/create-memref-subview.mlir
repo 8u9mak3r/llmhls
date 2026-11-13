@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-create-memref-subview %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-create-memref-subview %s | FileCheck %s
 
 // CHECK: #map = affine_map<() -> (0)>
 // CHECK: #map1 = affine_map<(d0) -> (d0 * 16)>

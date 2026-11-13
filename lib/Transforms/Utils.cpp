@@ -1,10 +1,10 @@
 //===----------------------------------------------------------------------===//
 //
-// Copyright 2020-2021 The ScaleHLS Authors.
+// Copyright 2020-2021 The LLMHLS Authors.
 //
 //===----------------------------------------------------------------------===//
 
-#include "scalehls/Transforms/Utils.h"
+#include "llmhls/Transforms/Utils.h"
 #include "mlir/Dialect/Affine/LoopUtils.h"
 #include "mlir/Dialect/Affine/Passes.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
@@ -12,10 +12,10 @@
 #include "mlir/IR/Dominance.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Transforms/Passes.h"
-#include "scalehls/Transforms/Passes.h"
+#include "llmhls/Transforms/Passes.h"
 
 using namespace mlir;
-using namespace scalehls;
+using namespace llmhls;
 using namespace hls;
 
 static void addMemoryOptsPipeline(PassManager &pm) {
@@ -35,7 +35,7 @@ static void addMemoryOptsPipeline(PassManager &pm) {
 }
 
 /// Apply memory optimizations.
-bool scalehls::applyMemoryOpts(func::FuncOp func) {
+bool llmhls::applyMemoryOpts(func::FuncOp func) {
   PassManager optPM(func.getContext(), "func.func");
   addMemoryOptsPipeline(optPM);
   if (failed(optPM.run(func)))
@@ -46,7 +46,7 @@ bool scalehls::applyMemoryOpts(func::FuncOp func) {
 /// Apply optimization strategy to a loop band. The ancestor function is also
 /// passed in because the post-tiling optimizations have to take function as
 /// target, e.g. canonicalizer and array partition.
-bool scalehls::applyOptStrategy(AffineLoopBand &band, func::FuncOp func,
+bool llmhls::applyOptStrategy(AffineLoopBand &band, func::FuncOp func,
                                 FactorList tileList, unsigned targetII) {
   // By design the input function must be the ancestor of the input loop band.
   if (!func->isProperAncestor(band.front()))
@@ -68,7 +68,7 @@ bool scalehls::applyOptStrategy(AffineLoopBand &band, func::FuncOp func,
 }
 
 /// Apply optimization strategy to a function.
-bool scalehls::applyOptStrategy(func::FuncOp func,
+bool llmhls::applyOptStrategy(func::FuncOp func,
                                 ArrayRef<FactorList> tileLists,
                                 ArrayRef<unsigned> targetIIs) {
   AffineLoopBands bands;

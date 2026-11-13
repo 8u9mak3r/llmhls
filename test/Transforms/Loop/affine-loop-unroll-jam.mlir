@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-affine-loop-unroll-jam="unroll-factor=2" %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-affine-loop-unroll-jam="unroll-factor=2" %s | FileCheck %s
 
 // CHECK: #map = affine_map<(d0, d1) -> (d1 + d0)>
 // CHECK: #map1 = affine_map<(d0) -> (d0 + 1)>

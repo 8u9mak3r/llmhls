@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-func-preprocess %s | scalehls-translate -emit-hlscpp | FileCheck %s
+// RUN: llmhls-opt -llmhls-func-preprocess %s | llmhls-translate -emit-hlscpp | FileCheck %s
 // XFAIL: *
 
 // CHECK: void test_signature(

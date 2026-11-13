@@ -1,4 +1,4 @@
-// RUN: scalehls-opt -scalehls-simplify-copy -split-input-file %s | FileCheck %s
+// RUN: llmhls-opt -llmhls-simplify-copy -split-input-file %s | FileCheck %s
 
 // CHECK: module attributes {torch.debug_module_name = "ResNet"} {
 // CHECK:   func.func @forward(%arg0: memref<1x64x56x56xi8>, %arg1: memref<1000x64xi8>, %arg2: memref<64x64x1x1xi8>, %arg3: memref<64x64x3x3xi8>, %arg4: memref<64x64x3x3xi8>, %arg5: memref<1x1000xi8>) {
